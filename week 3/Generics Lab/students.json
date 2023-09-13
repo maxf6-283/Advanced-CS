@@ -1,0 +1,52 @@
+{
+	"John": {
+		"1": "APCS",
+		"2": "Algebra II H",
+		"3": "AP Physics I",
+		"4": "AP Comp",
+		"5": "Engineering II",
+		"6": "AP Euro",
+		"7": "Spanish III H"
+	},
+	"Mary": {
+		"1": "AP French",
+		"2": "Physics I",
+		"3": "AmLit",
+		"4": "APUSH",
+		"5": "Algebra II",
+		"6": "APCS"
+	},
+	"Stewart": {
+		"1": "AP Physics C",
+		"2": "AP Chem",
+		"3": "AP Calc BC",
+		"4": "AmLit",
+		"5": "U.S. History",
+		"6": "Spanish III",
+		"7": "Adv. CS"
+	},
+	"Albert": {
+		"1": "Algebra II",
+		"2": "Biology",
+		"3": "Survey Lit.",
+		"4": "Japanese I",
+		"5": "Ethnic Studies",
+		"6": "Choir"
+	},
+	"Max": {
+		"1": "HAmLit",
+		"2": "Adv. CS",
+		"3": "AP Calc BC",
+		"4": "AP Chem",
+		"5": "APUSH",
+		"6": "Engineering II",
+		"7": "AP Physics I"
+	},
+	"Gene": {
+		"1": "AP Gov",
+		"2": "AP Ceramics",
+		"3": "Engineering II",
+		"4": "AP French",
+		"6": "Dance"
+	}
+}
