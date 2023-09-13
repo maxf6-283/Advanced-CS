@@ -32,7 +32,7 @@ public class Runner {
 
         // sorting
         for (int[] arr : new int[][] { arr1, arr2, arr3 }) {
-            for (int i = 0; i < arr.length - 2; i++) {
+            for (int i = 0; i < arr.length - 1; i++) {
                 int maxIndex = i;
                 for (int j = i + 1; j < arr.length; j++) {
                     if (arr[j] < arr[maxIndex]) {
@@ -47,7 +47,7 @@ public class Runner {
         }
 
         for (MyArrayList<Integer> list : List.of(list1, list2, list3)) {
-            for (int i = 0; i < list.size() - 2; i++) {
+            for (int i = 0; i < list.size() - 1; i++) {
                 int maxIndex = i;
                 for (int j = i + 1; j < list.size(); j++) {
                     if (list.get(j) < list.get(maxIndex)) {
