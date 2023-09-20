@@ -15,26 +15,20 @@ public class Runner {
             testing.add("Thing: " + i);
         }
 
-        String[] stringArgs = new String[500];
-        for(int i = 0; i < stringArgs.length; i++) {
-            stringArgs[i] = "Element: " + i;
-        }
-        int[] intArgs = new int[200];
-        for(int i = 0; i < intArgs.length; i++) {
-            intArgs[i] = i;
-        }
-        Collection<String>[] collArgs = new Collection[100];
+        testing.subList(0, 10).clear();
+        testing.subList(80, 90).clear();
+        testing.subList(20, 30).clear();
+        testing.subList(10, 11).clear();
+        testing.subList(10, 10).clear();
 
-        for(int i = 0; i < 100; i++) {
-            java.util.ArrayList<String> coll = new ArrayList<>();
-            for(int j = 0; Math.random() > j/100; j++) {
-                coll.add("E: " + Math.random());
-            }
-            collArgs[i] = coll;
-        }
+        testing.remove(0);
+        testing.remove(testing.size() - 1);
+        testing.remove("Thing: " + 11);
+
+        System.out.println(testing);
 
 
-        testAllFunctions(testing, stringArgs, intArgs, collArgs);
+        //testAllFunctions(testing, stringArgs, intArgs, collArgs);
         // testing.subList(0, 5).clear();
 
         // testing.subList(0, 5).clear();

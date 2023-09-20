@@ -219,14 +219,23 @@ public class LinkedListTwo<E> implements List<E> {
             lastNodeChain = new Node(iter.next(), lastNodeChain, null);
         }
 
-        addSize(c.size());
+        if (size == 0) {
+            replaceBaseNode(baseNodeChain);
+        } else {
+            lastNode.nextNode = baseNodeChain;
+            baseNodeChain.prevNode = lastNode;
+        }
         replaceLastNode(lastNodeChain);
+        addSize(c.size());
 
         return true;
     }
 
     @Override
     public boolean addAll(int index, Collection<? extends E> c) {
+        if (index >= size) {
+            throw new IndexOutOfBoundsException("Index " + index + " out of bounds for length " + size);
+        }
         if (c.isEmpty()) {
             return false;
         }
@@ -237,13 +246,38 @@ public class LinkedListTwo<E> implements List<E> {
             lastNodeChain = new Node(iter.next(), lastNodeChain, null);
         }
 
-        if (index == 0) {
-            replaceBaseNode(baseNodeChain);
-        }
-        if (index == size) {
-            replaceLastNode(lastNodeChain);
-        }
         addSize(c.size());
+        if (size == 0) {
+            replaceBaseNode(baseNodeChain);
+            replaceLastNode(lastNodeChain);
+            return true;
+        }
+        
+        if (index == 0) {
+            baseNode.prevNode = lastNodeChain;
+            replaceBaseNode(baseNodeChain);
+        } else if (index == size) {
+            lastNode.nextNode = baseNodeChain;
+            replaceLastNode(lastNodeChain);
+        } else {
+            Node node;
+            if (index < size / 2) {
+                node = baseNode;
+                for (int i = 0; i < index; i++) {
+                    node = node.nextNode;
+                }
+            } else {
+                node = lastNode;
+                for (int i = 0; i < size - index; i++) {
+                    node = node.prevNode;
+                }
+            }
+
+            node.prevNode.nextNode = baseNodeChain;
+            baseNodeChain.prevNode = node.prevNode;
+            node.prevNode = lastNodeChain;
+            lastNodeChain.nextNode = node;
+        }
 
         return true;
     }
@@ -293,12 +327,20 @@ public class LinkedListTwo<E> implements List<E> {
 
     @Override
     public E get(int index) {
-        Node node = baseNode;
         if (index >= size) {
             throw new IndexOutOfBoundsException();
         }
-        for (int i = 0; i < index; i++) {
-            node = node.nextNode;
+        Node node;
+        if (index < size / 2) {
+            node = baseNode;
+            for (int i = 0; i < index; i++) {
+                node = node.nextNode;
+            }
+        } else {
+            node = lastNode;
+            for (int i = 0; i < size - index; i++) {
+                node = node.prevNode;
+            }
         }
 
         return node.element;
@@ -306,14 +348,22 @@ public class LinkedListTwo<E> implements List<E> {
 
     @Override
     public E set(int index, E element) {
-        Node node = baseNode;
 
         if (index >= size) {
             throw new IndexOutOfBoundsException();
         }
 
-        for (int i = 0; i < index; i++) {
-            node = node.nextNode;
+        Node node;
+        if (index < size / 2) {
+            node = baseNode;
+            for (int i = 0; i < index; i++) {
+                node = node.nextNode;
+            }
+        } else {
+            node = lastNode;
+            for (int i = 0; i < size - index; i++) {
+                node = node.prevNode;
+            }
         }
 
         E el = node.element;
@@ -327,9 +377,17 @@ public class LinkedListTwo<E> implements List<E> {
             throw new IndexOutOfBoundsException();
         }
 
-        Node node = baseNode;
-        for (int i = 0; i < index; i++) {
-            node = node.nextNode;
+        Node node;
+        if (index < size / 2) {
+            node = baseNode;
+            for (int i = 0; i < index; i++) {
+                node = node.nextNode;
+            }
+        } else {
+            node = lastNode;
+            for (int i = 0; i < size - index; i++) {
+                node = node.prevNode;
+            }
         }
 
         Node newNode = new Node(element, node.prevNode, node);
@@ -349,9 +407,17 @@ public class LinkedListTwo<E> implements List<E> {
             throw new IndexOutOfBoundsException();
         }
 
-        Node node = baseNode;
-        for (int i = 0; i < index; i++) {
-            node = node.nextNode;
+        Node node;
+        if (index < size / 2) {
+            node = baseNode;
+            for (int i = 0; i < index; i++) {
+                node = node.nextNode;
+            }
+        } else {
+            node = lastNode;
+            for (int i = 0; i < size - index; i++) {
+                node = node.prevNode;
+            }
         }
 
         if (index == 0) {
@@ -416,7 +482,7 @@ public class LinkedListTwo<E> implements List<E> {
 
         public MyListIterator(int index) {
             this();
-            for(int i = 0; i < index; i++) {
+            for (int i = 0; i < index; i++) {
                 next();
             }
         }
@@ -462,19 +528,19 @@ public class LinkedListTwo<E> implements List<E> {
         @Override
         public void remove() {
             recentNode.removeSelf();
-            if(recentNode == prevNode) {
+            if (recentNode == prevNode) {
                 prevNode = nextNode.prevNode;
                 prevNode.nextNode = nextNode;
                 nextIndex--;
             }
-            if(recentNode == nextNode) {
+            if (recentNode == nextNode) {
                 nextNode = prevNode.nextNode;
                 nextNode.prevNode = prevNode;
             }
-            if(recentNode == baseNode) {
+            if (recentNode == baseNode) {
                 replaceBaseNode(recentNode.nextNode);
             }
-            if(recentNode == lastNode) {
+            if (recentNode == lastNode) {
                 replaceLastNode(recentNode.prevNode);
             }
             addSize(-1);
@@ -489,9 +555,9 @@ public class LinkedListTwo<E> implements List<E> {
         public void add(E e) {
             Node newNode = new Node(e, prevNode, nextNode);
             prevNode = newNode;
-            if(nextIndex == 0) {
+            if (nextIndex == 0) {
                 replaceBaseNode(newNode);
-            } else if(nextIndex == size) {
+            } else if (nextIndex == size) {
                 replaceLastNode(newNode);
             }
             nextIndex++;
