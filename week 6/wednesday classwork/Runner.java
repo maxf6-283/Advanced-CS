@@ -18,13 +18,13 @@ public class Runner {
 
         Node start = n1;
 
-        //print out nodes
+        // print out nodes
         for (Node b = start; b != null; b = b.next()) {
             System.out.print(b.get() + ", ");
         }
         System.out.println();
 
-        //search
+        // search
         System.out.print("Enter an animal to search for: ");
         String animal = sc.nextLine();
         boolean found = false;
@@ -40,7 +40,7 @@ public class Runner {
             System.out.println("Animal not found!");
         }
 
-        //remove
+        // remove
         System.out.println("Enter an animal to remove");
         animal = sc.nextLine();
         if (start.get().equals(animal)) {
@@ -59,7 +59,7 @@ public class Runner {
         }
         System.out.println();
 
-        //replace by name
+        // replace by name
         System.out.println("Enter an animal you'd like to replace: ");
         animal = sc.nextLine();
         System.out.println("Enter an animal to replace the old one with: ");
@@ -77,14 +77,13 @@ public class Runner {
         }
         System.out.println();
 
-        //replace at index
+        // replace at index
         System.out.println("Enter an index: ");
         int index = sc.nextInt();
         sc.nextLine();
         System.out.println("Enter the animal you'd like to be in that index: ");
         newAnimal = sc.nextLine();
-        sc.close();
-        
+
         Node b = start;
         for (int i = 0; i < index; i++) {
             b = b.next();
@@ -96,12 +95,12 @@ public class Runner {
         }
         System.out.println();
 
-        //sort alphabetically
+        // sort alphabetically
         System.out.println("Sorting");
 
-        for(b = start; b != null; b = b.next()) {
-            for(Node j = b; j.next() != null; j = j.next()) {
-                if(j.get().compareToIgnoreCase(j.next().get()) > 0) {
+        for (b = start; b != null; b = b.next()) {
+            for (Node j = start; j.next() != null; j = j.next()) {
+                if (j.get().compareToIgnoreCase(j.next().get()) > 0) {
                     String temp = j.get();
                     j.set(j.next().get());
                     j.next().set(temp);
@@ -112,6 +111,44 @@ public class Runner {
         for (b = start; b != null; b = b.next()) {
             System.out.print(b.get() + ", ");
         }
-        
+        System.out.println();
+
+        System.out.println("Enter a new animal to add: ");
+        animal = sc.nextLine();
+
+        for (b = start; b.next() != null; b = b.next()) {
+        }
+        b.setNext(new Node(animal));
+
+        for (b = start; b != null; b = b.next()) {
+            System.out.print(b.get() + ", ");
+        }
+        System.out.println();
+
+        System.out.println("Enter a new animal to add: ");
+        animal = sc.nextLine();
+        System.out.println("Where would you like to add it: ");
+        index = sc.nextInt();
+        sc.close();
+
+        if (index == 0) {
+            Node newNode = new Node(animal);
+            newNode.setNext(start);
+            start = newNode;
+        } else {
+            b = start;
+            for (int i = 1; i < index; i++) {
+                b = b.next();
+            }
+            Node newNode = new Node(animal);
+            newNode.setNext(b.next());
+            b.setNext(newNode);
+        }
+
+
+        for (b = start; b != null; b = b.next()) {
+            System.out.print(b.get() + ", ");
+        }
+        System.out.println();
     }
 }
