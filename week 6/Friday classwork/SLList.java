@@ -88,11 +88,13 @@ public class SLList<E> {
     public boolean remove(Object o) {
         if (head.get().equals(o)) {
             head = head.next();
+            size--;
             return true;
         }
         for (Node<E> current = head; current.next() != null; current = current.next()) {
             if (current.next().get().equals(o)) {
                 current.setNext(current.next().next());
+                size--;
                 return true;
             }
         }
