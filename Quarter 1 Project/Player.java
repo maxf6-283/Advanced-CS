@@ -1,4 +1,5 @@
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.awt.Graphics;
 import java.awt.Color;
 import java.awt.Font;
@@ -15,15 +16,16 @@ public class Player {
 
     private Font font;
 
-    private int points = 0;
+    private int points;
 
-    private boolean holdEnabled;
+    private boolean selectEnabled;
 
     public Player(int x, int y, Font f) {
         xPos = x;
         yPos = y;
         hand = new ArrayList<>();
         font = f;
+        points = 50;
     }
 
     /**
@@ -176,17 +178,21 @@ public class Player {
     /**
      * Set whether or not the player can select to hold cards
      */
-    public void setHoldEnabled(boolean enabled) {
-        holdEnabled = enabled;
+    public void setSelectEnabled(boolean enabled) {
+        selectEnabled = enabled;
     }
 
-    public boolean holdEnabled() {
-        return holdEnabled;
+    public boolean selectEnabled() {
+        return selectEnabled;
     }
 
     private Card highlightedCard = null;
 
     public void checkCardHighlighting(int mouseX, int mouseY) {
+        if(!selectEnabled) {
+            hand.forEach(e -> e.setHighlighted(false));
+            return;
+        }
         highlightedCard = null;
         for (Card card : hand) {
             if (card.hoveringOver(mouseX, mouseY)) {
@@ -201,5 +207,27 @@ public class Player {
 
     public Card highlightedCard() {
         return highlightedCard;
+    }
+
+    public int selectedCardCount() {
+        return (int)hand.stream().filter(e -> e.selected()).count();
+    }
+
+    public void discardSelectedCards(Deck deckToDiscardTo) {
+        Iterator<Card> iter = hand.iterator();
+        while(iter.hasNext()) {
+            Card card = iter.next();
+            if(card.selected()) {
+                deckToDiscardTo.addCard(card);
+                iter.remove();
+                card.setSelected(false);
+            }
+        }
+    }
+
+    public void drawCards(Deck deck, int cards) {
+        for(int i = 0; i < cards; i++) {
+            drawCard(deck);
+        }
     }
 }

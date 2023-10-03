@@ -31,7 +31,6 @@ public class Table extends JPanel implements MouseInputListener {
 
     //reset and stand buttons
     private FancyButton replaceButton;
-    private FancyButton resetButton;
 
     public Table(int deckCount) {
         buttonFont = new Font("Lucida Sans Unicode", Font.BOLD, 20);
@@ -41,14 +40,15 @@ public class Table extends JPanel implements MouseInputListener {
         discardPile = new Deck(475, 300, 0, 0, false);
 
         player = new Player(400, 600, playerFont);
+        player.setSelectEnabled(false);
 
-        replaceButton = new FancyButton(400, 420, 200, 50, buttonFont, "Replace Cards");
-        resetButton = new FancyButton(400, 400, 200, 100, playerFont, "Reset");
+        replaceButton = new FancyButton(400, 420, 300, 50, buttonFont, "Replace Cards and Proceed");
+        replaceButton.setEnabled(false);
 
         addMouseListener(this);
         addMouseMotionListener(this);
 
-        state = State.DEALING;
+        state = State.FINISHED;
 
         frame = 0;
     }
@@ -73,9 +73,6 @@ public class Table extends JPanel implements MouseInputListener {
 
         //draw the buttons
         replaceButton.draw(g);
-        if (state == State.FINISHED) {
-            resetButton.draw(g);
-        }
     }
 
     public void animate() {
@@ -93,51 +90,41 @@ public class Table extends JPanel implements MouseInputListener {
 
             switch (state) {
                 case DEALING -> {
-                    if (frame == 0) {
-                        //disable the buttons while dealing
-                        replaceButton.setEnabled(false);
-                        mainDeck.setEnabled(false);
-                        player.setHoldEnabled(false);
-                    }
-                    frame++;
-
                     //deal cards
-
-                    if(frame%25 == 24) {
-                        player.drawCard(mainDeck);
-                        if(player.cardCount() >= 5) {
-                            state = State.YOUR_TURN;
-                            frame = 0;
-                        }
-                    }
-                    
-                }
-                case YOUR_TURN -> {
-                    if (frame == 0) {
-                        //enable the stand and draw buttons
-                        replaceButton.setEnabled(true);
-                        mainDeck.setEnabled(true);
-                        player.setHoldEnabled(true);
-                    }
-                    frame++;
-
-                    
-                }
-                case FINISHED -> {
-                    frame = 0;
-                }
-                case RESETTING -> {
-                    frame++;
-
-                    //shuffle the discard pile into the main pile if the main deck is too small
                     if (mainDeck.size() < 10) {
                         discardPile.addOnto(mainDeck);
                         mainDeck.shuffle();
                     }
 
+
+                    if(frame%25 == 0) {
+                        player.drawCard(mainDeck);
+                        if(player.cardCount() >= 5) {
+                            state = State.YOUR_TURN;
+                            frame = 0;
+                            replaceButton.setEnabled(true);
+                        }
+                    }
+                    
+                    frame++;
+                }
+                case YOUR_TURN -> {
+                    if (frame == 0) {
+                        //enable the discard button
+                        replaceButton.setEnabled(true);
+                        player.setSelectEnabled(true);
+                    }
+                    frame++;
+                }
+                case FINISHED -> {
+                    //shuffle the discard pile into the main pile if the main deck is too small
+                }
+                case RESETTING -> {
+                    frame++;
                     //redeal after 25 frames
                     if (frame > 25) {
-                        state = State.DEALING;
+                        state = State.FINISHED;
+                        mainDeck.setEnabled(true);
                         frame = 0;
                     }
                 }
@@ -152,19 +139,23 @@ public class Table extends JPanel implements MouseInputListener {
         //handle button presses
         if (mainDeck.hoveringOver(e.getX(), e.getY()) && mainDeck.enabled()) {
             //draw a card
-            player.drawCard(mainDeck);
+            player.discardAll(discardPile);
+            state = State.DEALING;
             mainDeck.setEnabled(false);
-            replaceButton.setEnabled(false);
+            frame = 0;
+            player.setSelectEnabled(true);
+            player.addPoints(-1);
             
         } else if (replaceButton.hoveringOver(e.getX(), e.getY()) && replaceButton.enabled()) {
-            //Don't draw a card
-            replaceButton.setEnabled(false);
-            mainDeck.setEnabled(false);
+            //Replace cards
+            int cardsToDraw = player.selectedCardCount();
+            player.discardSelectedCards(discardPile);
+            player.drawCards(mainDeck, cardsToDraw);
+            player.setSelectEnabled(false);
 
-        } else if (resetButton.hoveringOver(e.getX(), e.getY()) && state == State.FINISHED) {
-            //discard all cards into the discard pile
-            player.discardAll(discardPile);
             state = State.RESETTING;
+            frame = 0;
+            replaceButton.setEnabled(false);
         }
 
         if(player.highlightedCard() != null) {
@@ -179,8 +170,6 @@ public class Table extends JPanel implements MouseInputListener {
             mainDeck.setPressed(true);
         } else if (replaceButton.hoveringOver(e.getX(), e.getY()) && replaceButton.enabled()) {
             replaceButton.setPressed(true);
-        } else if (resetButton.hoveringOver(e.getX(), e.getY()) && state == State.FINISHED) {
-            resetButton.setPressed(true);
         }
     }
 
@@ -189,7 +178,6 @@ public class Table extends JPanel implements MouseInputListener {
         //handle the cool button highlighting
         mainDeck.setPressed(false);
         replaceButton.setPressed(false);
-        resetButton.setPressed(false);
     }
 
     @Override
@@ -221,12 +209,6 @@ public class Table extends JPanel implements MouseInputListener {
             replaceButton.setHovering(true);
         } else {
             replaceButton.setHovering(false);
-        }
-
-        if (resetButton.hoveringOver(e.getX(), e.getY())) {
-            resetButton.setHovering(true);
-        } else {
-            resetButton.setHovering(false);
         }
 
         player.checkCardHighlighting(e.getX(), e.getY());

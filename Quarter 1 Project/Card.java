@@ -243,4 +243,8 @@ public class Card {
     public void toggleSelected() {
         selected = !selected;
     }
+
+    public boolean selected() {
+        return selected;
+    }
 }
