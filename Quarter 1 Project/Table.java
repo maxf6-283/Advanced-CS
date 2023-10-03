@@ -36,8 +36,8 @@ public class Table extends JPanel implements MouseInputListener {
         buttonFont = new Font("Lucida Sans Unicode", Font.BOLD, 20);
         playerFont = new Font("Lucida Sans Unicode", Font.BOLD, 40);
 
-        mainDeck = new Deck(325, 300, 0, deckCount, true);
-        discardPile = new Deck(475, 300, 0, 0, false);
+        mainDeck = new Deck(125, 300, 0, deckCount, true);
+        discardPile = new Deck(275, 300, 0, 0, false);
 
         player = new Player(400, 600, playerFont);
         player.setSelectEnabled(false);
@@ -73,6 +73,9 @@ public class Table extends JPanel implements MouseInputListener {
 
         //draw the buttons
         replaceButton.draw(g);
+
+        //draw the rules
+        displayRules(g);
     }
 
     public void animate() {
@@ -212,5 +215,23 @@ public class Table extends JPanel implements MouseInputListener {
         }
 
         player.checkCardHighlighting(e.getX(), e.getY());
+    }
+
+    private void displayRules(Graphics g) {
+        String text = """
+                Royal Flush: 250 Points
+                Straight Flush: 50 Points
+                Four of a Kind: 25 Points
+                Full House: 9 Points
+                Flush: 6 Points
+                Straight: 4 Points
+                3 of a Kind: 3 Points
+                2 Pairs: 2 Points
+                Pair of Jacks or higher: 1 Point
+                Anything Else: 0 points
+                """;
+
+        g.setColor(new Color(0, 100, 0));
+        g.drawRoundRect(400, 200, 200, 400, 20, 20);
     }
 }
