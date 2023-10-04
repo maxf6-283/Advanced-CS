@@ -34,6 +34,8 @@ public class Table extends JPanel implements MouseInputListener {
 
     private boolean displayHelperText;
 
+    private int lastPointsEarned = -1;
+
     public Table(int deckCount) {
         buttonFont = new Font("Lucida Sans Unicode", Font.BOLD, 20);
         playerFont = new Font("Lucida Sans Unicode", Font.BOLD, 40);
@@ -141,7 +143,8 @@ public class Table extends JPanel implements MouseInputListener {
                         state = State.FINISHED;
                         mainDeck.setEnabled(true);
                         frame = 0;
-                        player.addPoints(player.pointValue());
+                        lastPointsEarned = player.pointValue();
+                        player.addPoints(lastPointsEarned);
                     }
                 }
             }
@@ -153,7 +156,7 @@ public class Table extends JPanel implements MouseInputListener {
     @Override
     public void mouseClicked(MouseEvent e) {
         //handle button presses
-        if (mainDeck.hoveringOver(e.getX(), e.getY()) && mainDeck.enabled()) {
+        if (mainDeck.hoveringOver(e.getX(), e.getY()) && mainDeck.enabled() && player.getPoints() > 0) {
             //draw a card
             player.discardAll(discardPile);
             state = State.DEALING;
@@ -183,7 +186,7 @@ public class Table extends JPanel implements MouseInputListener {
     @Override
     public void mousePressed(MouseEvent e) {
         //handle the cool button highlighting
-        if (mainDeck.hoveringOver(e.getX(), e.getY()) && mainDeck.enabled()) {
+        if (mainDeck.hoveringOver(e.getX(), e.getY()) && mainDeck.enabled() && player.getPoints() > 0) {
             mainDeck.setPressed(true);
         } else if (replaceButton.hoveringOver(e.getX(), e.getY()) && replaceButton.enabled()) {
             replaceButton.setPressed(true);
@@ -216,7 +219,7 @@ public class Table extends JPanel implements MouseInputListener {
     @Override
     public void mouseMoved(MouseEvent e) {
         //handle the cool button highlighting
-        if (mainDeck.hoveringOver(e.getX(), e.getY())) {
+        if (mainDeck.hoveringOver(e.getX(), e.getY()) && player.getPoints() > 0) {
             mainDeck.setHighlighted(true);
         } else {
             mainDeck.setHighlighted(false);
@@ -230,6 +233,8 @@ public class Table extends JPanel implements MouseInputListener {
 
         player.checkCardHighlighting(e.getX(), e.getY());
     }
+
+    private static final int[] pointValues = {250, 50, 25, 9, 6, 4, 3, 2, 1, 0};
 
     private void displayRules(Graphics g) {
         String text = """
@@ -247,12 +252,18 @@ public class Table extends JPanel implements MouseInputListener {
 
         g.setColor(new Color(0, 0, 0, 50));
         g.fillRoundRect(400, 100, 350, 400, 20, 20);
-        g.setColor(Color.WHITE);
         g.setFont(buttonFont);
         int lineY = 125;
+        int i = 0;
         for(String line : text.split("\n")) {
+            if(state == State.FINISHED && lastPointsEarned == pointValues[i]) {
+                g.setColor(Color.YELLOW);
+            } else {
+                g.setColor(Color.WHITE);
+            }
             g.drawString(line, 410, lineY);
             lineY += 40;
+            i++;
         }
     }
 }

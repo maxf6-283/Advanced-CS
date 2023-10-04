@@ -291,4 +291,8 @@ public class Player {
             drawCard(deck);
         }
     }
+
+    public int getPoints() {
+        return points;
+    }
 }
