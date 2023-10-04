@@ -1,10 +1,9 @@
-import java.util.ArrayList;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Color;
 
 public class Deck {
-    private ArrayList<Card> cards;
+    private MyLinkedList<Card> cards;
 
     private int xPos;
     private int yPos;
@@ -18,7 +17,7 @@ public class Deck {
     private boolean enabled;
 
     public Deck(int x, int y, double rot, int deckCount, boolean flipped) {
-        cards = new ArrayList<>();
+        cards = new MyLinkedList<>();
         xPos = x;
         yPos = y;
         rotation = rot;

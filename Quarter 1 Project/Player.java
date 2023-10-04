@@ -1,4 +1,3 @@
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.awt.Graphics;
 import java.awt.Color;
@@ -9,7 +8,7 @@ public class Player {
     private static final int CARD_SPACING = 80;
     private static final double CARD_ROTATION = 0.25;
 
-    private ArrayList<Card> hand;
+    private MyLinkedList<Card> hand;
 
     private int xPos;
     private int yPos;
@@ -23,7 +22,7 @@ public class Player {
     public Player(int x, int y, Font f) {
         xPos = x;
         yPos = y;
-        hand = new ArrayList<>();
+        hand = new MyLinkedList<>();
         font = f;
         points = 50;
     }
@@ -86,9 +85,9 @@ public class Player {
         g.setColor(new Color(0, 0, 0, 50));
 
         // draw the cards
-        for (int i = 0; i < hand.size(); i++) {
-            hand.get(i).draw(g);
-            hand.get(i).faceUp();
+        for (Card card : hand) {
+            card.draw(g);
+            card.faceUp();
         }
 
         // draw the number of wins

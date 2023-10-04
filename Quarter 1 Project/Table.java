@@ -32,6 +32,8 @@ public class Table extends JPanel implements MouseInputListener {
     //reset and stand buttons
     private FancyButton replaceButton;
 
+    private boolean displayHelperText;
+
     public Table(int deckCount) {
         buttonFont = new Font("Lucida Sans Unicode", Font.BOLD, 20);
         playerFont = new Font("Lucida Sans Unicode", Font.BOLD, 40);
@@ -42,7 +44,7 @@ public class Table extends JPanel implements MouseInputListener {
         player = new Player(400, 600, playerFont);
         player.setSelectEnabled(false);
 
-        replaceButton = new FancyButton(400, 420, 300, 50, buttonFont, "Replace Cards and Proceed");
+        replaceButton = new FancyButton(200, 420, 300, 50, buttonFont, "Replace Cards and Proceed");
         replaceButton.setEnabled(false);
 
         addMouseListener(this);
@@ -76,6 +78,12 @@ public class Table extends JPanel implements MouseInputListener {
 
         //draw the rules
         displayRules(g);
+
+        if(displayHelperText) {
+            g.setColor(Color.BLACK);
+            g.setFont(buttonFont);
+            g.drawString("Press the deck to start playing", 80, 150);
+        }
     }
 
     public void animate() {
@@ -121,6 +129,10 @@ public class Table extends JPanel implements MouseInputListener {
                 }
                 case FINISHED -> {
                     //shuffle the discard pile into the main pile if the main deck is too small
+                    frame++;
+                    if(frame > 300) {
+                        displayHelperText = true;
+                    }
                 }
                 case RESETTING -> {
                     frame++;
@@ -148,6 +160,7 @@ public class Table extends JPanel implements MouseInputListener {
             frame = 0;
             player.setSelectEnabled(true);
             player.addPoints(-1);
+            displayHelperText = false;
             
         } else if (replaceButton.hoveringOver(e.getX(), e.getY()) && replaceButton.enabled()) {
             //Replace cards
@@ -231,7 +244,14 @@ public class Table extends JPanel implements MouseInputListener {
                 Anything Else: 0 points
                 """;
 
-        g.setColor(new Color(0, 100, 0));
-        g.drawRoundRect(400, 200, 200, 400, 20, 20);
+        g.setColor(new Color(0, 0, 0, 50));
+        g.fillRoundRect(400, 100, 350, 400, 20, 20);
+        g.setColor(Color.WHITE);
+        g.setFont(buttonFont);
+        int lineY = 125;
+        for(String line : text.split("\n")) {
+            g.drawString(line, 410, lineY);
+            lineY += 40;
+        }
     }
 }
