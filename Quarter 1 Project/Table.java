@@ -14,22 +14,23 @@ public class Table extends JPanel implements MouseInputListener {
         FINISHED,
         RESETTING
     }
+
     private State state;
 
     private Deck mainDeck;
     private Deck discardPile;
 
-    //a counter to keep track of how long a state is taking
+    // a counter to keep track of how long a state is taking
     private int frame;
 
-    //the players
+    // the players
     private Player player;
 
-    //the fonts for buttons and players
+    // the fonts for buttons and players
     private Font buttonFont;
     private Font playerFont;
 
-    //reset and stand buttons
+    // reset and stand buttons
     private FancyButton replaceButton;
 
     private boolean displayHelperText;
@@ -64,27 +65,27 @@ public class Table extends JPanel implements MouseInputListener {
 
     @Override
     public void paintComponent(Graphics g) {
-        //background
+        // background
         g.setColor(new Color(100, 200, 100));
         g.fillRect(0, 0, 800, 800);
 
-        //decks
+        // decks
         mainDeck.draw(g);
         discardPile.draw(g);
 
-        //draw the players
+        // draw the players
         player.draw(g);
 
-        //draw the buttons
+        // draw the buttons
         replaceButton.draw(g);
 
-        //draw the rules
+        // draw the rules
         displayRules(g);
 
-        if(displayHelperText) {
+        if (displayHelperText) {
             g.setColor(Color.BLACK);
             g.setFont(buttonFont);
-            g.drawString("Press the deck to start playing", 80, 150);
+            g.drawString("Press the deck to start playing", 60, 200);
         }
     }
 
@@ -103,42 +104,41 @@ public class Table extends JPanel implements MouseInputListener {
 
             switch (state) {
                 case DEALING -> {
-                    //deal cards
+                    // deal cards
                     if (mainDeck.size() < 10) {
                         discardPile.addOnto(mainDeck);
                         mainDeck.shuffle();
                     }
 
-
-                    if(frame%25 == 0) {
+                    if (frame % 25 == 0) {
                         player.drawCard(mainDeck);
-                        if(player.cardCount() >= 5) {
+                        if (player.cardCount() >= 5) {
                             state = State.YOUR_TURN;
                             frame = 0;
                             replaceButton.setEnabled(true);
                         }
                     }
-                    
+
                     frame++;
                 }
                 case YOUR_TURN -> {
                     if (frame == 0) {
-                        //enable the discard button
+                        // enable the discard button
                         replaceButton.setEnabled(true);
                         player.setSelectEnabled(true);
                     }
                     frame++;
                 }
                 case FINISHED -> {
-                    //shuffle the discard pile into the main pile if the main deck is too small
+                    // shuffle the discard pile into the main pile if the main deck is too small
                     frame++;
-                    if(frame > 300) {
+                    if (frame > 300) {
                         displayHelperText = true;
                     }
                 }
                 case RESETTING -> {
                     frame++;
-                    //redeal after 25 frames
+                    // redeal after 25 frames
                     if (frame > 25) {
                         state = State.FINISHED;
                         mainDeck.setEnabled(true);
@@ -155,9 +155,9 @@ public class Table extends JPanel implements MouseInputListener {
 
     @Override
     public void mouseClicked(MouseEvent e) {
-        //handle button presses
+        // handle button presses
         if (mainDeck.hoveringOver(e.getX(), e.getY()) && mainDeck.enabled() && player.getPoints() > 0) {
-            //draw a card
+            // draw a card
             player.discardAll(discardPile);
             state = State.DEALING;
             mainDeck.setEnabled(false);
@@ -165,9 +165,9 @@ public class Table extends JPanel implements MouseInputListener {
             player.setSelectEnabled(true);
             player.addPoints(-1);
             displayHelperText = false;
-            
+
         } else if (replaceButton.hoveringOver(e.getX(), e.getY()) && replaceButton.enabled()) {
-            //Replace cards
+            // Replace cards
             int cardsToDraw = player.selectedCardCount();
             player.discardSelectedCards(discardPile);
             player.drawCards(mainDeck, cardsToDraw);
@@ -178,14 +178,14 @@ public class Table extends JPanel implements MouseInputListener {
             replaceButton.setEnabled(false);
         }
 
-        if(player.highlightedCard() != null) {
+        if (player.highlightedCard() != null) {
             player.highlightedCard().toggleSelected();
         }
     }
 
     @Override
     public void mousePressed(MouseEvent e) {
-        //handle the cool button highlighting
+        // handle the cool button highlighting
         if (mainDeck.hoveringOver(e.getX(), e.getY()) && mainDeck.enabled() && player.getPoints() > 0) {
             mainDeck.setPressed(true);
         } else if (replaceButton.hoveringOver(e.getX(), e.getY()) && replaceButton.enabled()) {
@@ -195,7 +195,7 @@ public class Table extends JPanel implements MouseInputListener {
 
     @Override
     public void mouseReleased(MouseEvent e) {
-        //handle the cool button highlighting
+        // handle the cool button highlighting
         mainDeck.setPressed(false);
         replaceButton.setPressed(false);
     }
@@ -212,13 +212,13 @@ public class Table extends JPanel implements MouseInputListener {
 
     @Override
     public void mouseDragged(MouseEvent e) {
-        //dragging the mouse is the same as moving it normally
+        // dragging the mouse is the same as moving it normally
         mouseMoved(e);
     }
 
     @Override
     public void mouseMoved(MouseEvent e) {
-        //handle the cool button highlighting
+        // handle the cool button highlighting
         if (mainDeck.hoveringOver(e.getX(), e.getY()) && player.getPoints() > 0) {
             mainDeck.setHighlighted(true);
         } else {
@@ -234,7 +234,7 @@ public class Table extends JPanel implements MouseInputListener {
         player.checkCardHighlighting(e.getX(), e.getY());
     }
 
-    private static final int[] pointValues = {250, 50, 25, 9, 6, 4, 3, 2, 1, 0};
+    private static final int[] pointValues = { 250, 50, 25, 9, 6, 4, 3, 2, 1, 0 };
 
     private void displayRules(Graphics g) {
         String text = """
@@ -255,8 +255,8 @@ public class Table extends JPanel implements MouseInputListener {
         g.setFont(buttonFont);
         int lineY = 125;
         int i = 0;
-        for(String line : text.split("\n")) {
-            if(state == State.FINISHED && lastPointsEarned == pointValues[i]) {
+        for (String line : text.split("\n")) {
+            if (state == State.FINISHED && lastPointsEarned == pointValues[i]) {
                 g.setColor(Color.YELLOW);
             } else {
                 g.setColor(Color.WHITE);
