@@ -44,7 +44,7 @@ public class Table extends JPanel implements MouseInputListener {
         player = new Player(400, 600, playerFont);
         player.setSelectEnabled(false);
 
-        replaceButton = new FancyButton(200, 420, 300, 50, buttonFont, "Replace Cards and Proceed");
+        replaceButton = new FancyButton(200, 420, 300, 50, buttonFont, "Discard selected cards");
         replaceButton.setEnabled(false);
 
         addMouseListener(this);
@@ -141,6 +141,7 @@ public class Table extends JPanel implements MouseInputListener {
                         state = State.FINISHED;
                         mainDeck.setEnabled(true);
                         frame = 0;
+                        player.addPoints(player.pointValue());
                     }
                 }
             }

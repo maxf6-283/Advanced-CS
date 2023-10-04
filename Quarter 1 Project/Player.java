@@ -33,7 +33,15 @@ public class Player {
      * @param deck - the deck to draw from
      */
     public void drawCard(Deck deck) {
-        hand.add(deck.getCard(0));
+        Card cardToDraw = deck.getCard(0);
+        int i = 0;
+        for (Card card : hand) {
+            if (card.value() >= cardToDraw.value()) {
+                break;
+            }
+            i++;
+        }
+        hand.add(i, cardToDraw);
         deck.removeCard(0);
     }
 
@@ -50,28 +58,97 @@ public class Player {
     }
 
     /**
-     * Calculate the point value of the hand, aces are 11 unless you would bust
-     * because of it, in which case they're 1
+     * Calculate the point value of the hand
      * 
      * @return the point value of the hand
      */
     public int pointValue() {
-        int points = 0;
-        int aces = 0;
+        boolean isRoyal = true;
+        boolean isFourOfAKind = false;
+        boolean isFullHouse = true;
+        boolean isFlush = true;
+        boolean isStraight = true;
+        boolean isThreeOfAKind = true;
+        boolean isTwoPairs = true;
+        boolean isPairOfJacks = false;
 
-        for (Card card : hand) {
-            points += card.value();
-            if (card.name().equals("A")) {
-                aces++;
+        Card[] cards = new Card[5];
+        cards = hand.toArray(cards);
+
+        for (int i = 1; i < cards.length; i++) {
+            if (cards[i].value() != cards[0].value() + 1) {
+                isStraight = false;
+                break;
+            }
+        }
+        if (cards[0].value() == 2 && cards[1].value() == 3 && cards[2].value() == 4 && cards[3].value() == 5
+                && cards[4].value() == 14) {
+            isStraight = true;
+        }
+
+        for (int i = 1; i < cards.length; i++) {
+            if (cards[i].suite() != cards[0].suite()) {
+                isFlush = false;
+                break;
             }
         }
 
-        while (points > 21 && aces > 0) {
-            points -= 10;
-            aces--;
+        if (cards[0].value() != 10 || !isStraight) {
+            isRoyal = false;
         }
 
-        return points;
+        int streak = 1;
+        int pairCount = 0;
+        int threeCount = 0;
+        for (int i = 1; i < cards.length; i++) {
+            if (cards[i].value() == cards[i - 1].value()) {
+                streak++;
+            } else {
+                streak = 1;
+            }
+
+            if (streak == 2 && cards[i].value() >= 11) {
+                isPairOfJacks = true;
+            }
+
+            if (streak == 2) {
+                pairCount++;
+            }
+            if (streak == 3) {
+                pairCount--;
+                threeCount++;
+            }
+            if (streak == 4) {
+                isFourOfAKind = true;
+            }
+        }
+        isTwoPairs = pairCount == 2;
+        isThreeOfAKind = threeCount > 0;
+        isFullHouse = pairCount == 1 && threeCount == 1;
+
+        if (isRoyal && isFlush) {
+            // Royal flush!
+            return 250;
+        } else if (isStraight && isFlush) {
+            // Straight flush
+            return 50;
+        } else if (isFourOfAKind) {
+            return 25;
+        } else if (isFullHouse) {
+            return 9;
+        } else if (isFlush) {
+            return 6;
+        } else if (isStraight) {
+            return 4;
+        } else if (isThreeOfAKind) {
+            return 3;
+        } else if (isTwoPairs) {
+            return 2;
+        } else if (isPairOfJacks) {
+            return 1;
+        }
+
+        return 0;
     }
 
     /**
@@ -106,22 +183,6 @@ public class Player {
             cardXPos += CARD_SPACING;
             cardRot += CARD_ROTATION;
         }
-    }
-
-    /**
-     * Get the number of aces
-     * 
-     * @return the number of aces in the hand
-     */
-    public int aceCount() {
-        int aceCount = 0;
-        for (Card card : hand) {
-            if (card.name().equals("A")) {
-                aceCount++;
-            }
-        }
-
-        return aceCount;
     }
 
     /**
@@ -188,7 +249,7 @@ public class Player {
     private Card highlightedCard = null;
 
     public void checkCardHighlighting(int mouseX, int mouseY) {
-        if(!selectEnabled) {
+        if (!selectEnabled) {
             hand.forEach(e -> e.setHighlighted(false));
             return;
         }
@@ -209,14 +270,14 @@ public class Player {
     }
 
     public int selectedCardCount() {
-        return (int)hand.stream().filter(e -> e.selected()).count();
+        return (int) hand.stream().filter(e -> e.selected()).count();
     }
 
     public void discardSelectedCards(Deck deckToDiscardTo) {
         Iterator<Card> iter = hand.iterator();
-        while(iter.hasNext()) {
+        while (iter.hasNext()) {
             Card card = iter.next();
-            if(card.selected()) {
+            if (card.selected()) {
                 deckToDiscardTo.addCard(card);
                 iter.remove();
                 card.setSelected(false);
@@ -225,7 +286,7 @@ public class Player {
     }
 
     public void drawCards(Deck deck, int cards) {
-        for(int i = 0; i < cards; i++) {
+        for (int i = 0; i < cards; i++) {
             drawCard(deck);
         }
     }

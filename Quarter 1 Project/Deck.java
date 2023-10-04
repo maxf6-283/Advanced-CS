@@ -26,31 +26,31 @@ public class Deck {
 
         for(int j = 0; j < deckCount; j++) {
 
-            for (int i = 2; i <= 9; i++) {
+            for (int i = 2; i <= 10; i++) {
                 cards.add(new Card(Integer.toString(i), i, Card.Suite.CLUBS));
                 cards.add(new Card(Integer.toString(i), i, Card.Suite.SPADES));
                 cards.add(new Card(Integer.toString(i), i, Card.Suite.DIAMONDS));
                 cards.add(new Card(Integer.toString(i), i, Card.Suite.HEARTS));
             }
-            cards.add(new Card("J", 10, Card.Suite.CLUBS));
-            cards.add(new Card("J", 10, Card.Suite.SPADES));
-            cards.add(new Card("J", 10, Card.Suite.DIAMONDS));
-            cards.add(new Card("J", 10, Card.Suite.HEARTS));
+            cards.add(new Card("J", 11, Card.Suite.CLUBS));
+            cards.add(new Card("J", 11, Card.Suite.SPADES));
+            cards.add(new Card("J", 11, Card.Suite.DIAMONDS));
+            cards.add(new Card("J", 11, Card.Suite.HEARTS));
 
-            cards.add(new Card("Q", 10, Card.Suite.CLUBS));
-            cards.add(new Card("Q", 10, Card.Suite.SPADES));
-            cards.add(new Card("Q", 10, Card.Suite.DIAMONDS));
-            cards.add(new Card("Q", 10, Card.Suite.HEARTS));
+            cards.add(new Card("Q", 12, Card.Suite.CLUBS));
+            cards.add(new Card("Q", 12, Card.Suite.SPADES));
+            cards.add(new Card("Q", 12, Card.Suite.DIAMONDS));
+            cards.add(new Card("Q", 12, Card.Suite.HEARTS));
 
-            cards.add(new Card("K", 10, Card.Suite.CLUBS));
-            cards.add(new Card("K", 10, Card.Suite.SPADES));
-            cards.add(new Card("K", 10, Card.Suite.DIAMONDS));
-            cards.add(new Card("K", 10, Card.Suite.HEARTS));
+            cards.add(new Card("K", 13, Card.Suite.CLUBS));
+            cards.add(new Card("K", 13, Card.Suite.SPADES));
+            cards.add(new Card("K", 13, Card.Suite.DIAMONDS));
+            cards.add(new Card("K", 13, Card.Suite.HEARTS));
 
-            cards.add(new Card("A", 11, Card.Suite.CLUBS));
-            cards.add(new Card("A", 11, Card.Suite.SPADES));
-            cards.add(new Card("A", 11, Card.Suite.DIAMONDS));
-            cards.add(new Card("A", 11, Card.Suite.HEARTS));
+            cards.add(new Card("A", 14, Card.Suite.CLUBS));
+            cards.add(new Card("A", 14, Card.Suite.SPADES));
+            cards.add(new Card("A", 14, Card.Suite.DIAMONDS));
+            cards.add(new Card("A", 14, Card.Suite.HEARTS));
 
             for (Card card : cards) {
                 card.setPos(xPos, yPos);
@@ -58,7 +58,7 @@ public class Deck {
                 card.setFlipped(flipped ? -1 : 1);
             }
 
-            shuffle();
+            //shuffle();
         }
     }
 
