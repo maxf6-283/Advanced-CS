@@ -8,10 +8,10 @@ public class Deck {
     private int xPos;
     private int yPos;
     private double rotation;
-    
+
     private boolean flipped;
 
-    //"buttony" values
+    // "buttony" values
     private boolean highlighted;
     private boolean pressed;
     private boolean enabled;
@@ -24,7 +24,7 @@ public class Deck {
         enabled = true;
         this.flipped = flipped;
 
-        for(int j = 0; j < deckCount; j++) {
+        for (int j = 0; j < deckCount; j++) {
 
             for (int i = 2; i <= 10; i++) {
                 cards.add(new Card(Integer.toString(i), i, Card.Suite.CLUBS));
@@ -58,7 +58,7 @@ public class Deck {
                 card.setFlipped(flipped ? -1 : 1);
             }
 
-            //shuffle();
+            shuffle();
         }
     }
 
@@ -80,10 +80,11 @@ public class Deck {
 
     /**
      * Draw the deck
+     * 
      * @param g - the Graphics object
      */
     public void draw(Graphics g) {
-        //draw the "shadow" of the deck
+        // draw the "shadow" of the deck
         g.setColor(new Color(0, 0, 0, 50));
         Graphics2D g2d = (Graphics2D) g;
         g2d.translate(xPos, yPos);
@@ -94,7 +95,7 @@ public class Deck {
         g2d.rotate(-rotation);
         g2d.translate(-xPos, -yPos);
 
-        //draw the cards in the deck
+        // draw the cards in the deck
         if (flipped) {
             for (int i = 0; i < cards.size(); i++) {
                 cards.get(i).draw(g);
@@ -105,19 +106,20 @@ public class Deck {
             }
         }
 
-        //do the cool button highlight things
+        // do the cool button highlight things
         if (highlighted && enabled) {
-            //make the higlight darker if the button is being pressed
-            if(pressed) {
+            // make the higlight darker if the button is being pressed
+            if (pressed) {
                 g.setColor(new Color(0, 0, 0, 50));
             } else {
                 g.setColor(new Color(0, 0, 0, 25));
             }
-            //draw the higlight
+            // draw the higlight
             g2d.translate(xPos, yPos);
             g2d.rotate(rotation);
             g2d.translate(-xPos, -yPos);
-            g2d.fillRoundRect(xPos- 10 - Card.WIDTH / 2, yPos - 10 - Card.HEIGHT / 2, Card.WIDTH + 20, Card.HEIGHT + 20, 40, 40);
+            g2d.fillRoundRect(xPos - 10 - Card.WIDTH / 2, yPos - 10 - Card.HEIGHT / 2, Card.WIDTH + 20,
+                    Card.HEIGHT + 20, 40, 40);
             g2d.translate(xPos, yPos);
             g2d.rotate(-rotation);
             g2d.translate(-xPos, -yPos);
@@ -130,7 +132,7 @@ public class Deck {
     public void move() {
         for (Card card : cards) {
             card.lerpTo(xPos, yPos, rotation, 0.1);
-            if(flipped) {
+            if (flipped) {
                 card.faceDown();
             } else {
                 card.faceUp();
@@ -152,13 +154,14 @@ public class Deck {
 
     /**
      * Get if the given position is over the deck
+     * 
      * @param x - the x position of the point
      * @param y - the y position of the point
      * @return - if the point is contained in the bounds of the deck
      */
     public boolean hoveringOver(int x, int y) {
-        if(Math.abs(xPos - x) <= Card.WIDTH/2) {
-            if(Math.abs(yPos - y) <= Card.HEIGHT/2) {
+        if (Math.abs(xPos - x) <= Card.WIDTH / 2) {
+            if (Math.abs(yPos - y) <= Card.HEIGHT / 2) {
                 return true;
             }
         }
@@ -171,8 +174,8 @@ public class Deck {
     }
 
     public void shuffle() {
-        for(int i = 0; i < cards.size(); i++) {
-            int j = (int)(Math.random() * cards.size());
+        for (int i = 0; i < cards.size(); i++) {
+            int j = (int) (Math.random() * cards.size());
             Card temp = cards.get(i);
             cards.set(i, cards.get(j));
             cards.set(j, temp);
@@ -188,10 +191,11 @@ public class Deck {
 
     /**
      * Take the cards from another deck to this deck
+     * 
      * @param deck - the deck to be taken from
      */
     public void addOnto(Deck deck) {
-        while(cards.size() > 0) {
+        while (cards.size() > 0) {
             deck.addCard(cards.get(0));
             cards.remove(0);
         }

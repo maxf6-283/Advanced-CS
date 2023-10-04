@@ -76,8 +76,9 @@ public class Player {
         cards = hand.toArray(cards);
 
         for (int i = 1; i < cards.length; i++) {
-            if (cards[i].value() != cards[0].value() + 1) {
+            if (cards[i].value() != cards[0].value() + i) {
                 isStraight = false;
+                
                 break;
             }
         }
