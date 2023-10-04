@@ -20,9 +20,11 @@ public class LinkedListTwo<E> implements List<E> {
             element = e;
 
             prevNode = pNode;
-            pNode.nextNode = this;
+            if (pNode != null)
+                pNode.nextNode = this;
             nextNode = nNode;
-            nNode.prevNode = this;
+            if (nNode != null)
+                nNode.prevNode = this;
         }
 
         public void removeSelf() {
@@ -127,6 +129,24 @@ public class LinkedListTwo<E> implements List<E> {
             return element;
         }
 
+        @Override
+        public void remove() {
+            if (node == null) {
+                node = lastNode;
+            } else {
+                node = node.prevNode;
+            }
+            node.removeSelf();
+            if (node == baseNode) {
+                replaceBaseNode(node.nextNode);
+            }
+            if (node == lastNode) {
+                replaceLastNode(node.prevNode);
+            }
+            addSize(-1);
+            node = node.nextNode;
+        }
+
     }
 
     @Override
@@ -160,6 +180,13 @@ public class LinkedListTwo<E> implements List<E> {
 
     @Override
     public boolean add(E e) {
+        if (size == 0) {
+            Node newNode = new Node(e);
+            baseNode = newNode;
+            lastNode = newNode;
+            addSize(1);
+            return true;
+        }
         Node newLastNode = new Node(e, lastNode, null);
         replaceLastNode(newLastNode);
         addSize(1);
@@ -252,7 +279,7 @@ public class LinkedListTwo<E> implements List<E> {
             replaceLastNode(lastNodeChain);
             return true;
         }
-        
+
         if (index == 0) {
             baseNode.prevNode = lastNodeChain;
             replaceBaseNode(baseNodeChain);
@@ -268,7 +295,7 @@ public class LinkedListTwo<E> implements List<E> {
                 }
             } else {
                 node = lastNode;
-                for (int i = 0; i < size - index; i++) {
+                for (int i = 0; i < size - index - 1; i++) {
                     node = node.prevNode;
                 }
             }
@@ -330,7 +357,7 @@ public class LinkedListTwo<E> implements List<E> {
         if (index >= size) {
             throw new IndexOutOfBoundsException();
         }
-        Node node;
+        Node node = null;
         if (index < size / 2) {
             node = baseNode;
             for (int i = 0; i < index; i++) {
@@ -338,11 +365,11 @@ public class LinkedListTwo<E> implements List<E> {
             }
         } else {
             node = lastNode;
-            for (int i = 0; i < size - index; i++) {
+            for (int i = 0; i < size - index - 1; i++) {
                 node = node.prevNode;
             }
         }
-
+        
         return node.element;
     }
 
@@ -361,7 +388,7 @@ public class LinkedListTwo<E> implements List<E> {
             }
         } else {
             node = lastNode;
-            for (int i = 0; i < size - index; i++) {
+            for (int i = 0; i < size - index - 1; i++) {
                 node = node.prevNode;
             }
         }
@@ -377,19 +404,27 @@ public class LinkedListTwo<E> implements List<E> {
             throw new IndexOutOfBoundsException();
         }
 
-        Node node;
+        if (index == size) {
+            add(element);
+            return;
+        }
+
+        Node node = null;
         if (index < size / 2) {
             node = baseNode;
+            if (node == null) {
+            }
             for (int i = 0; i < index; i++) {
                 node = node.nextNode;
             }
         } else {
             node = lastNode;
-            for (int i = 0; i < size - index; i++) {
+            if (node == null) {
+            }
+            for (int i = 0; i < size - index - 1; i++) {
                 node = node.prevNode;
             }
         }
-
         Node newNode = new Node(element, node.prevNode, node);
 
         if (index == 0) {
@@ -415,7 +450,7 @@ public class LinkedListTwo<E> implements List<E> {
             }
         } else {
             node = lastNode;
-            for (int i = 0; i < size - index; i++) {
+            for (int i = 0; i < size - index - 1; i++) {
                 node = node.prevNode;
             }
         }
