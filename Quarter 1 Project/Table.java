@@ -47,7 +47,7 @@ public class Table extends JPanel implements MouseInputListener {
         player = new Player(400, 600, playerFont);
         player.setSelectEnabled(false);
 
-        replaceButton = new FancyButton(200, 420, 300, 50, buttonFont, "Discard selected cards");
+        replaceButton = new FancyButton(200, 420, 300, 50, buttonFont, "Discard unselected cards");
         replaceButton.setEnabled(false);
 
         addMouseListener(this);
@@ -168,8 +168,8 @@ public class Table extends JPanel implements MouseInputListener {
 
         } else if (replaceButton.hoveringOver(e.getX(), e.getY()) && replaceButton.enabled()) {
             // Replace cards
-            int cardsToDraw = player.selectedCardCount();
-            player.discardSelectedCards(discardPile);
+            int cardsToDraw = player.unselectedCardCount();
+            player.discardUnSelectedCards(discardPile);
             player.drawCards(mainDeck, cardsToDraw);
             player.setSelectEnabled(false);
 

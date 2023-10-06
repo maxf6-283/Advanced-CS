@@ -269,17 +269,18 @@ public class Player {
         return highlightedCard;
     }
 
-    public int selectedCardCount() {
-        return (int) hand.stream().filter(e -> e.selected()).count();
+    public int unselectedCardCount() {
+        return (int) hand.stream().filter(e -> !e.selected()).count();
     }
 
-    public void discardSelectedCards(Deck deckToDiscardTo) {
+    public void discardUnSelectedCards(Deck deckToDiscardTo) {
         Iterator<Card> iter = hand.iterator();
         while (iter.hasNext()) {
             Card card = iter.next();
-            if (card.selected()) {
+            if (!card.selected()) {
                 deckToDiscardTo.addCard(card);
                 iter.remove();
+            } else {
                 card.setSelected(false);
             }
         }
