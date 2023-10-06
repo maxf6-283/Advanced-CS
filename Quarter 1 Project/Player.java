@@ -120,6 +120,7 @@ public class Player {
                 threeCount++;
             }
             if (streak == 4) {
+                threeCount--;
                 isFourOfAKind = true;
             }
         }
@@ -128,10 +129,8 @@ public class Player {
         isFullHouse = pairCount == 1 && threeCount == 1;
 
         if (isRoyal && isFlush) {
-            // Royal flush!
             return 250;
         } else if (isStraight && isFlush) {
-            // Straight flush
             return 50;
         } else if (isFourOfAKind) {
             return 25;

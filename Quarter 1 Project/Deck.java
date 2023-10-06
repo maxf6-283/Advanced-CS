@@ -58,7 +58,7 @@ public class Deck {
                 card.setFlipped(flipped ? -1 : 1);
             }
 
-            shuffle();
+            // shuffle();
         }
     }
 
