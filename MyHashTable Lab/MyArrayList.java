@@ -5,16 +5,18 @@ import java.util.ListIterator;
 import java.util.RandomAccess;
 import java.lang.reflect.Array;
 
-public class ArrayList<E> implements List<E>, RandomAccess {
+public class MyArrayList<E> implements List<E>, RandomAccess {
     private Object[] elements = new Object[1];
     private int size = 0;
 
-    public ArrayList() {}
-    public ArrayList(Collection<? extends E> c) {
+    public MyArrayList() {
+    }
+
+    public MyArrayList(Collection<? extends E> c) {
         size = c.size();
         elements = new Object[Integer.highestOneBit(size) << 1];
         int i = 0;
-        for(E e : c) {
+        for (E e : c) {
             elements[i] = e;
             i++;
         }
@@ -355,7 +357,7 @@ public class ArrayList<E> implements List<E>, RandomAccess {
 
         @Override
         public boolean add(E e) {
-            ArrayList.this.add(endIndex, e);
+            MyArrayList.this.add(endIndex, e);
             endIndex++;
             return true;
         }
@@ -390,7 +392,7 @@ public class ArrayList<E> implements List<E>, RandomAccess {
 
         @Override
         public boolean addAll(Collection<? extends E> c) {
-            return ArrayList.this.addAll(endIndex, c);
+            return MyArrayList.this.addAll(endIndex, c);
         }
 
         @Override
@@ -399,7 +401,7 @@ public class ArrayList<E> implements List<E>, RandomAccess {
                 throw new ArrayIndexOutOfBoundsException(
                         "Index " + index + " out of bounds for array length " + size());
             }
-            return ArrayList.this.addAll(startIndex + index, c);
+            return MyArrayList.this.addAll(startIndex + index, c);
         }
 
         @Override
@@ -461,18 +463,18 @@ public class ArrayList<E> implements List<E>, RandomAccess {
 
         @Override
         public E set(int index, E element) {
-            return ArrayList.this.set(index + startIndex, element);
+            return MyArrayList.this.set(index + startIndex, element);
         }
 
         @Override
         public void add(int index, E element) {
-            ArrayList.this.add(index + startIndex, element);
+            MyArrayList.this.add(index + startIndex, element);
             endIndex++;
         }
 
         @Override
         public E remove(int index) {
-            E el = ArrayList.this.remove(index + startIndex);
+            E el = MyArrayList.this.remove(index + startIndex);
             endIndex--;
             return el;
         }
@@ -531,12 +533,12 @@ public class ArrayList<E> implements List<E>, RandomAccess {
 
             @Override
             public void remove() {
-                ArrayList.this.remove(pointer);
+                MyArrayList.this.remove(pointer);
                 endIndex--;
             }
         }
 
-        private class MyListIterator extends ArrayList<E>.MyListIterator {
+        private class MyListIterator extends MyArrayList<E>.MyListIterator {
             public MyListIterator(int index) {
                 super(index + startIndex);
             }
@@ -566,7 +568,7 @@ public class ArrayList<E> implements List<E>, RandomAccess {
         public String toString() {
             String str = "[";
             for (int i = startIndex; i < endIndex - 1; i++) {
-                str += elements[i] + ", ";
+                str += elements[i].toString() + ", ";
             }
 
             return str + elements[endIndex - 1] + "]";
@@ -574,15 +576,15 @@ public class ArrayList<E> implements List<E>, RandomAccess {
 
         @Override
         public boolean equals(Object other) {
-            if(!(other instanceof List)) {
+            if (!(other instanceof List)) {
                 return false;
             }
             List<?> list = (List<?>) other;
-            if(list.size() != size()) {
+            if (list.size() != size()) {
                 return false;
             }
-            for(int i = 0; i < size; i++) {
-                if(!elements[i].equals(list.get(i))) {
+            for (int i = 0; i < size; i++) {
+                if (!elements[i].equals(list.get(i))) {
                     return false;
                 }
             }
@@ -608,7 +610,7 @@ public class ArrayList<E> implements List<E>, RandomAccess {
         @Override
         public void remove() {
             pointer--;
-            ArrayList.this.remove(pointer);
+            MyArrayList.this.remove(pointer);
         }
     }
 
@@ -658,18 +660,18 @@ public class ArrayList<E> implements List<E>, RandomAccess {
 
         @Override
         public void remove() {
-            ArrayList.this.remove(lastIndexUsed);
+            MyArrayList.this.remove(lastIndexUsed);
             size--;
         }
 
         @Override
         public void set(E e) {
-            ArrayList.this.set(lastIndexUsed, e);
+            MyArrayList.this.set(lastIndexUsed, e);
         }
 
         @Override
         public void add(E e) {
-            ArrayList.this.add(pointer, e);
+            MyArrayList.this.add(pointer, e);
             size++;
         }
 
@@ -677,7 +679,7 @@ public class ArrayList<E> implements List<E>, RandomAccess {
 
     @Override
     public String toString() {
-        if(size == 0) {
+        if (size == 0) {
             return "[]";
         }
         String str = "[";
@@ -690,15 +692,15 @@ public class ArrayList<E> implements List<E>, RandomAccess {
 
     @Override
     public boolean equals(Object other) {
-        if(!(other instanceof List)) {
+        if (!(other instanceof List)) {
             return false;
         }
         List<?> list = (List<?>) other;
-        if(list.size() != size()) {
+        if (list.size() != size()) {
             return false;
         }
-        for(int i = 0; i < size; i++) {
-            if(!elements[i].equals(list.get(i))) {
+        for (int i = 0; i < size; i++) {
+            if (!elements[i].equals(list.get(i))) {
                 return false;
             }
         }

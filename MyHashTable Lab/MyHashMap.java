@@ -4,25 +4,25 @@ import java.util.Map;
 import java.util.Set;
 import java.lang.reflect.Array;
 
-public class HashMap<K, V> implements Map<K, V> {
+public class MyHashMap<K, V> implements Map<K, V> {
     private Node[] buckets;
     private int size;
     private float loadFactor;
 
-    public HashMap() {
+    public MyHashMap() {
         this(16, 0.75f);
     }
 
-    public HashMap(int initialCapacity) {
+    public MyHashMap(int initialCapacity) {
         this(initialCapacity, 0.75f);
     }
 
-    public HashMap(float loadFactor) {
+    public MyHashMap(float loadFactor) {
         this(16, loadFactor);
     }
 
     @SuppressWarnings("unchecked")
-    public HashMap(int initialCapacity, float loadFactor) {
+    public MyHashMap(int initialCapacity, float loadFactor) {
         buckets = (Node[]) Array.newInstance(Node.class, initialCapacity);
         size = 0;
         this.loadFactor = loadFactor;
@@ -152,7 +152,7 @@ public class HashMap<K, V> implements Map<K, V> {
             while (node != null) {
                 int index = node.hash % newBuckets.length;
                 index = index < 0 ? index + newBuckets.length : index;
-
+                
                 if (newBuckets[index] == null) {
                     newBuckets[index] = node;
                 } else {
@@ -162,7 +162,6 @@ public class HashMap<K, V> implements Map<K, V> {
                     }
                     nodeToAddTo.next = node;
                 }
-
                 Node prevNode = node;
                 node = node.next;
                 prevNode.next = null;
@@ -311,7 +310,7 @@ public class HashMap<K, V> implements Map<K, V> {
 
         @Override
         public boolean contains(Object o) {
-            return HashMap.this.containsKey(o);
+            return MyHashMap.this.containsKey(o);
         }
 
         @Override
@@ -365,7 +364,7 @@ public class HashMap<K, V> implements Map<K, V> {
         @Override
         public boolean remove(Object o) {
             int prevSize = size;
-            HashMap.this.remove(o);
+            MyHashMap.this.remove(o);
             return size != prevSize;
         }
 
@@ -425,7 +424,7 @@ public class HashMap<K, V> implements Map<K, V> {
 
         @Override
         public void clear() {
-            HashMap.this.clear();
+            MyHashMap.this.clear();
         }
 
         @Override
@@ -499,7 +498,7 @@ public class HashMap<K, V> implements Map<K, V> {
 
         @Override
         public boolean contains(Object o) {
-            return HashMap.this.containsValue(o);
+            return MyHashMap.this.containsValue(o);
         }
 
         @Override
@@ -635,7 +634,7 @@ public class HashMap<K, V> implements Map<K, V> {
 
         @Override
         public void clear() {
-            HashMap.this.clear();
+            MyHashMap.this.clear();
         }
 
         @Override
@@ -683,6 +682,11 @@ public class HashMap<K, V> implements Map<K, V> {
                 }
                 Entry<?, ?> o = (Entry<?, ?>) other;
                 return o.getKey().equals(node.key) && o.getValue().equals(node.value);
+            }
+
+            @Override
+            public String toString() {
+                return node.key + " - " + node.value;
             }
         }
         private class EntrySetIterator implements Iterator<Entry<K, V>> {
@@ -746,7 +750,7 @@ public class HashMap<K, V> implements Map<K, V> {
                 return false;
             }
             Entry<?, ?> entry = (Entry<?, ?>) o;
-            return HashMap.this.containsKey(entry.getKey()) && HashMap.this.get(entry.getKey()).equals(entry.getValue());
+            return MyHashMap.this.containsKey(entry.getKey()) && MyHashMap.this.get(entry.getKey()).equals(entry.getValue());
         }
 
         @Override
@@ -800,7 +804,7 @@ public class HashMap<K, V> implements Map<K, V> {
         @Override
         public boolean remove(Object o) {
             if(contains(o)) {
-                HashMap.this.remove(((Entry<?, ?>)o).getKey());
+                MyHashMap.this.remove(((Entry<?, ?>)o).getKey());
                 return true;
             }
             return false;
@@ -863,7 +867,7 @@ public class HashMap<K, V> implements Map<K, V> {
 
         @Override
         public void clear() {
-            HashMap.this.clear();
+            MyHashMap.this.clear();
         }
 
         @Override
