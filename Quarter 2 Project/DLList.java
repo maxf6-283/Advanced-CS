@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.function.Predicate;
 
-public class LinkedListTwo<E> implements List<E>, Serializable {
+public class DLList<E> implements List<E>, Serializable {
     private class Node implements Serializable{
         public Node nextNode;
         public Node prevNode;
@@ -41,7 +41,7 @@ public class LinkedListTwo<E> implements List<E>, Serializable {
     private Node baseNode;
     private Node lastNode;
     private int size;
-    private LinkedListTwo<E> parentList;
+    private DLList<E> parentList;
 
     private void addSize(int sizeToAdd) {
         size += sizeToAdd;
@@ -70,14 +70,14 @@ public class LinkedListTwo<E> implements List<E>, Serializable {
         }
     }
 
-    public LinkedListTwo() {
+    public DLList() {
         baseNode = null;
         lastNode = null;
         size = 0;
         parentList = null;
     }
 
-    private LinkedListTwo(LinkedListTwo<E> parent, Node base, Node last, int size) {
+    private DLList(DLList<E> parent, Node base, Node last, int size) {
         baseNode = base;
         lastNode = last;
         parentList = parent;
@@ -612,7 +612,7 @@ public class LinkedListTwo<E> implements List<E>, Serializable {
         }
 
         if (toIndex == 0) {
-            return new LinkedListTwo<E>(this, baseNode, baseNode.prevNode, 0);
+            return new DLList<E>(this, baseNode, baseNode.prevNode, 0);
         }
 
         Node base = baseNode;
@@ -625,7 +625,7 @@ public class LinkedListTwo<E> implements List<E>, Serializable {
             last = last.nextNode;
         }
 
-        return new LinkedListTwo<E>(this, base, last, toIndex - fromIndex);
+        return new DLList<E>(this, base, last, toIndex - fromIndex);
     }
 
     @Override

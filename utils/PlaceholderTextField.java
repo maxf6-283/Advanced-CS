@@ -29,4 +29,9 @@ public class PlaceholderTextField extends JTextField {
             }
         });
     }
+
+    public void clear() {
+        setForeground(Color.GRAY);
+        setText(placeText + "​");
+    }
 }

@@ -2,9 +2,10 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.io.Serializable;
 import java.lang.reflect.Array;
 
-public class HashMap<K, V> implements Map<K, V> {
+public class HashMap<K, V> implements Map<K, V>, Serializable {
     private Node[] buckets;
     private int size;
     private float loadFactor;
@@ -241,7 +242,7 @@ public class HashMap<K, V> implements Map<K, V> {
         return(entrySet().equals(((Map<?, ?>)other).entrySet()));
     }
 
-    private class Node {
+    private class Node implements Serializable{
         public Node(int h, K k, V val) {
             hash = h;
             key = k;
