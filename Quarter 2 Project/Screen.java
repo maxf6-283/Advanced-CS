@@ -95,14 +95,14 @@ public class Screen extends JFrame implements KeyListener, MouseInputListener, M
         } else if (e.getSource() == load) {
             prompt.loadFile();
         } else if (e.getSource() == play) {
-            if(playing) {
+            if (playing) {
                 playing = false;
                 save.setEnabled(true);
                 load.setEnabled(true);
                 tileSelector.setEnabled(true);
                 play.setText("Play");
                 gameFrame.stop();
-            } else if(gameFrame.hasStartPos()) {
+            } else if (gameFrame.hasStartPos()) {
                 playing = true;
                 save.setEnabled(false);
                 load.setEnabled(false);
@@ -130,6 +130,9 @@ public class Screen extends JFrame implements KeyListener, MouseInputListener, M
 
     @Override
     public void mouseReleased(MouseEvent e) {
+        if (e.getButton() == 1 || clickQueue.lastAdded().isDragged()) {
+            gameFrame.finishChangeEvent();
+        }
     }
 
     @Override
@@ -147,6 +150,18 @@ public class Screen extends JFrame implements KeyListener, MouseInputListener, M
     @Override
     public void keyPressed(KeyEvent e) {
         keysPressed.put(e.getKeyCode(), true);
+        if (keysPressed.getOrDefault(17, false)) {
+            if (e.getKeyCode() == 90) {
+                if (keysPressed.getOrDefault(16, false)) {
+                    gameFrame.redo();
+                } else {
+                    gameFrame.undo();
+                }
+            }
+        }
+        if (e.getKeyCode() == 27) {
+            gameFrame.cancelChangeEvent();
+        }
     }
 
     @Override

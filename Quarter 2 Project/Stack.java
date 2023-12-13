@@ -1,7 +1,7 @@
-public class Queue<E> {
+public class Stack<E> {
     private DLList<E> list;
 
-    public Queue() {
+    public Stack() {
         list = new DLList<>();
     }
 
@@ -13,13 +13,13 @@ public class Queue<E> {
 
     public E peek() {
         synchronized (this) {
-            return list.get(0);
+            return list.getLast();
         }
     }
 
     public E pop() {
         synchronized (this) {
-            return list.remove(0);
+            return list.removeLast();
         }
     }
 
@@ -32,12 +32,6 @@ public class Queue<E> {
     public void clear() {
         synchronized (this) {
             list.clear();
-        }
-    }
-
-    public E lastAdded() {
-        synchronized(this) {
-            return list.getLast();
         }
     }
 }

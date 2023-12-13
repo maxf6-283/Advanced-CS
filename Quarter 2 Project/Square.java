@@ -27,6 +27,6 @@ public class Square implements Serializable{
 
     @Override
     public int hashCode() {
-        return x*1087+y;
+        return x >= y ? x * x + x + y : x + y * y;
     }
 }

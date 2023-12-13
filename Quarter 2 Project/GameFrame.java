@@ -7,7 +7,7 @@ import java.awt.geom.AffineTransform;
 import javax.swing.JPanel;
 
 public class GameFrame extends JPanel {
-    private static final int rows = 200, cols = 200;
+    private static final int rows = 50, cols = 50;
     private HashTable<Square, TileObject> tileMap;
     private int keyFrame;
     private double centerX, centerY, zoomAmt;
@@ -24,6 +24,11 @@ public class GameFrame extends JPanel {
     private Player player;
     private boolean playing;
     private DLList<WanderingObject> wanderingObjects;
+    private Thread wanderingObjectThread;
+
+    private Stack<TileChangeEvent> undoStack;
+    private Stack<TileChangeEvent> redoStack;
+    private TileChangeEvent upcomingChange = null;
 
     public GameFrame(HashMap<Integer, Boolean> keysPressed, Queue<Click> clickQueue,
             Queue<MouseWheelEvent> scrollQueue) {
@@ -35,14 +40,16 @@ public class GameFrame extends JPanel {
         tileMap = new HashTable<>();
         for (int i = 0; i < rows; i++) {
             for (int j = 0; j < cols; j++) {
-                tileMap.put(new Square(i, j), TileObject.WATER);
+                tileMap.put(new Square(i+5000, j+5000), TileObject.WATER);
             }
         }
-        centerX = rows * 25 / 2;
-        centerY = cols * 25 / 2;
+        centerX = (rows) * 25 / 2 + 5000*25;
+        centerY = (cols) * 25 / 2 + 5000*25;
         zoomAmt = 1.0;
 
         wanderingObjects = new DLList<>();
+        undoStack = new Stack<>();
+        redoStack = new Stack<>();
 
         new Thread(new GameAnimator(this, 60)).start();
     }
@@ -69,13 +76,12 @@ public class GameFrame extends JPanel {
         int rightmostTilePos = (int) (((x + getWidth() / 2 / zoomAmt) / 25)) + 1;
         int topmostTilePos = (int) (((y - getHeight() / 2 / zoomAmt) / 25)) - 1;
         int bottommostTilePos = (int) (((y + getHeight() / 2 / zoomAmt) / 25)) + 1;
-        
 
         for (Square s : tileMap.keySet()) {
             for (TileObject t : tileMap.get(s)) {
                 if (s.x() > leftmostTilePos && s.x() < rightmostTilePos && s.y() > topmostTilePos
                         && s.y() < bottommostTilePos) {
-                    t.paint(s.x() * 25, s.y() * 25, keyFrame + s.y()*10*7, g);
+                    t.paint(s.x() * 25, s.y() * 25, keyFrame, g2d);
                 }
                 if (t == TileObject.START) {
                     startPos = s;
@@ -85,9 +91,8 @@ public class GameFrame extends JPanel {
 
         if (playing) {
             player.paint(g2d);
-            for(WanderingObject w : wanderingObjects) {
+            for (WanderingObject w : wanderingObjects) {
                 w.paint(g2d);
-                w.move();
             }
         } else {
             double mouseX = (mouseXPos - getWidth() / 2) / zoomAmt + centerX;
@@ -118,11 +123,11 @@ public class GameFrame extends JPanel {
 
             while (!scrollQueue.isEmpty()) {
                 double newZoomAmt = zoomAmt * (1 - (scrollQueue.peek().getPreciseWheelRotation() / 10.0));
-                if (newZoomAmt < 0.5) {
-                    newZoomAmt = 0.5;
+                if (newZoomAmt < 0.01) {
+                    newZoomAmt = 0.01;
                 }
-                if (newZoomAmt > 10) {
-                    newZoomAmt = 10;
+                if (newZoomAmt > 20) {
+                    newZoomAmt = 20;
                 }
                 zoomAmt = newZoomAmt;
                 scrollQueue.pop();
@@ -145,11 +150,11 @@ public class GameFrame extends JPanel {
             }
             while (!scrollQueue.isEmpty()) {
                 double newZoomAmt = zoomAmt * (1 - (scrollQueue.peek().getPreciseWheelRotation() / 10.0));
-                if (newZoomAmt < 0.5) {
-                    newZoomAmt = 0.5;
+                if (newZoomAmt < 0.01) {
+                    newZoomAmt = 0.01;
                 }
-                if (newZoomAmt > 10) {
-                    newZoomAmt = 10;
+                if (newZoomAmt > 20) {
+                    newZoomAmt = 20;
                 }
                 double mouseX = (scrollQueue.peek().getX() - getWidth() / 2) / zoomAmt + centerX;
                 double mouseY = (scrollQueue.peek().getY() - getHeight() / 2) / zoomAmt + centerY;
@@ -169,44 +174,53 @@ public class GameFrame extends JPanel {
                     clickQueue.pop();
                     continue;
                 }
-
+                if(upcomingChange == null) {
+                    upcomingChange = new TileChangeEvent();
+                    upcomingChange.from = tileMap.containsKey(sq) ? tileMap.get(sq).getFirst() : null;
+                }
+                TileObject t = null;
                 switch (clickQueue.peek().type()) {
                     case "Delete" -> {
                         tileMap.removeLast(sq);
                     }
                     case "Grass" -> {
-                        addBgTile(sq, TileObject.GRASS);
+                        t = TileObject.GRASS;
                     }
                     case "Water" -> {
-                        addBgTile(sq, TileObject.WATER);
+                        t = (TileObject.WATER);
                     }
                     case "Dirt" -> {
-                        addBgTile(sq, TileObject.DIRT);
+                        t = (TileObject.DIRT);
                     }
                     case "Stone" -> {
-                        addBgTile(sq, TileObject.STONE);
+                        t = (TileObject.STONE);
                     }
                     case "Lava" -> {
-                        addBgTile(sq, TileObject.LAVA);
+                        t = (TileObject.LAVA);
                     }
                     case "Tree" -> {
-                        addFgTile(sq, TileObject.TREE);
+                        t = (TileObject.TREE);
                     }
                     case "Rock" -> {
-                        addFgTile(sq, TileObject.ROCK);
+                        t = (TileObject.ROCK);
                     }
                     case "Hole" -> {
-                        addFgTile(sq, TileObject.HOLE);
+                        t = (TileObject.HOLE);
                     }
                     case "Start" -> {
-                        addFgTile(sq, TileObject.START);
+                        t = (TileObject.START);
                     }
                     default -> {
                         throw new IllegalArgumentException("Unexpected click type: " + clickQueue.peek().type());
                     }
                 }
+                if(t != null) {
+                    addTile(sq, t);
+                }
+                upcomingChange.to = t;
                 lastUsedSquare = sq;
                 clickQueue.pop();
+                
             }
         }
 
@@ -215,18 +229,66 @@ public class GameFrame extends JPanel {
 
     private void addBgTile(Square sq, TileObject t) {
         if (tileMap.containsKey(sq)) {
+            if (keysPressed.getOrDefault(17, false)) {
+                try {
+                    fillTile(sq, t, tileMap.get(sq).getFirst());
+                } catch (StackOverflowError e) {
+
+                }
+            }
             if (tileMap.get(sq).get(0).isBackground()) {
                 tileMap.get(sq).set(0, t);
             } else {
                 tileMap.get(sq).add(0, t);
             }
+
         } else {
             tileMap.put(sq, t);
         }
     }
 
+    private void addTile(Square sq, TileObject t) {
+        upcomingChange.squares.add(sq);
+        if(t.isBackground()) {
+            addBgTile(sq, t);
+        } else {
+            addFgTile(sq, t);
+        }
+    }
+
+    private void fillTile(Square sq, TileObject replacement, TileObject replacee) {
+        upcomingChange.squares.add(sq);
+        if (replacee.isBackground()) {
+            if (tileMap.get(sq).get(0).isBackground()) {
+                tileMap.get(sq).set(0, replacement);
+            } else {
+                tileMap.get(sq).add(0, replacee);
+            }
+        } else {
+            if (!tileMap.get(sq).contains(replacee)) {
+                tileMap.put(sq, replacee);
+            }
+        }
+
+        Square[] squaresToCheck = new Square[] { new Square(sq.x(), sq.y() + 1), new Square(sq.x(), sq.y() - 1),
+                new Square(sq.x() + 1, sq.y()), new Square(sq.x() - 1, sq.y()) };
+
+        for (Square s : squaresToCheck) {
+            if (tileMap.containsKey(s) && tileMap.get(s).getFirst() == replacee) {
+                fillTile(s, replacement, replacee);
+            }
+        }
+    }
+
     private void addFgTile(Square sq, TileObject t) {
         if (tileMap.containsKey(sq)) {
+            if (keysPressed.getOrDefault(17, false)) {
+                try {
+                    fillTile(sq, t, tileMap.get(sq).getFirst());
+                } catch (StackOverflowError e) {
+
+                }
+            }
             if (tileMap.get(sq).contains(t)) {
                 return;
             } else {
@@ -256,21 +318,72 @@ public class GameFrame extends JPanel {
 
     public void start() {
         player = new Player(startPos.x() * 25, startPos.y() * 25, tileMap);
-        for(Square s : tileMap.keySet()) {
-            if(tileMap.get(s).get(0) == TileObject.WATER) {
-                if(Math.random() < 0.01) {
+        for (Square s : tileMap.keySet()) {
+            if (tileMap.get(s).get(0) == TileObject.WATER) {
+                if (Math.random() < 0.1) {
                     wanderingObjects.add(new Fish(s.x() * 25, s.y() * 25, tileMap));
+                }
+            } else if (tileMap.get(s).get(0) == TileObject.DIRT) {
+                if (Math.random() < 0.1) {
+                    wanderingObjects.add(new Spider(s.x() * 25, s.y() * 25, tileMap));
                 }
             }
         }
+        wanderingObjectThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                for (;;) {
+                    try {
+                        Thread.sleep(1000 / 60);
+                    } catch (InterruptedException e) {
+                        break;
+                    }
+
+                    for (WanderingObject w : wanderingObjects) {
+                        w.move();
+                    }
+                }
+            }
+
+        });
+        wanderingObjectThread.start();
         playing = true;
     }
 
     public void stop() {
+        wanderingObjectThread.interrupt();
+        wanderingObjects.clear();
         playing = false;
     }
 
     public boolean hasStartPos() {
         return startPos != null;
+    }
+
+    public void undo() {
+        if (!undoStack.isEmpty()) {
+            undoStack.peek().undo(tileMap);
+            redoStack.push(undoStack.pop());
+        }
+    }
+
+    public void redo() {
+        if (!redoStack.isEmpty()) {
+            redoStack.peek().redo(tileMap);
+            undoStack.push(redoStack.pop());
+        }
+    }
+
+    public void finishChangeEvent() {
+        undoStack.push(upcomingChange);
+        upcomingChange = null;
+        redoStack.clear();
+    }
+
+    public void cancelChangeEvent() {
+        if(upcomingChange != null) {
+            upcomingChange.undo(tileMap);
+            upcomingChange = null;
+        }
     }
 }

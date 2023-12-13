@@ -1,5 +1,6 @@
 import java.awt.Color;
-import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -23,7 +24,7 @@ public enum TileObject {
 
     static {
         images = new HashMap<>();
-        // water
+        // water (no longer used due to lag)
         images.put(WATER, new BufferedImage[14]);
         for (int i = 0; i < 14; i++) {
             try {
@@ -42,34 +43,37 @@ public enum TileObject {
         return this == WATER || this == LAVA || this == TREE || this == ROCK || this == HOLE;
     }
 
-    public void paint(int x, int y, int keyFrame, Graphics g) {
-        if (images.containsKey(this)) {
-            g.drawImage(images.get(this)[(keyFrame / 10) % images.get(this).length], x, y, null);
-            return;
-        }
+    public void paint(int x, int y, int keyFrame, Graphics2D g) {
+        // if (images.containsKey(this)) {
+        // g.drawImage(images.get(this)[(keyFrame / 10) % images.get(this).length], x,
+        // y, null);
+        // return;
+        // }
         switch (this) {
             case WATER -> {
-                g.setColor(Color.BLUE);
+                g.setColor(new Color(50, 100, 200));
                 g.fillRect(x, y, 25, 25);
+                g.setColor(new Color(100, 150, 200));
+                g.fill(new Rectangle2D.Double(x, y + (11+10*Math.sin(keyFrame / 100.0 + x)), 25, 4));
             }
             case DIRT -> {
                 g.setColor(new Color(255, 100, 100));
                 g.fillRect(x, y, 25, 25);
             }
             case GRASS -> {
-                g.setColor(Color.GREEN);
+                g.setColor(new Color(100, 250, 50));
                 g.fillRect(x, y, 25, 25);
             }
             case LAVA -> {
-                g.setColor(Color.ORANGE);
+                g.setColor(new Color(200, 100, 0));
                 g.fillRect(x, y, 25, 25);
             }
             case STONE -> {
-                g.setColor(Color.DARK_GRAY);
+                g.setColor(Color.GRAY);
                 g.fillRect(x, y, 25, 25);
             }
             case ROCK -> {
-                g.setColor(Color.GRAY);
+                g.setColor(Color.DARK_GRAY);
                 g.fillOval(x, y, 25, 25);
             }
             case TREE -> {
