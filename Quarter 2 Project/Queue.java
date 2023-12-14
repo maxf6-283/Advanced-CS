@@ -6,6 +6,7 @@ public class Queue<E> {
     }
 
     public void push(E e) {
+        lastAdded = e;
         synchronized (this) {
             list.add(e);
         }
@@ -35,9 +36,9 @@ public class Queue<E> {
         }
     }
 
+    private E lastAdded;
+
     public E lastAdded() {
-        synchronized(this) {
-            return list.getLast();
-        }
+        return lastAdded;
     }
 }

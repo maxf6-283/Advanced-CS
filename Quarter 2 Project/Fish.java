@@ -1,7 +1,5 @@
-import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.geom.AffineTransform;
-import java.util.List;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -43,85 +41,87 @@ public class Fish implements WanderingObject {
             angle += Math.PI;
         }
         AffineTransform prevTrans = g.getTransform();
-        g.translate(x - 10, y - 10);
+        g.translate(x, y);
         g.rotate(angle);
-        g.drawImage(image, 0, 0, 20, 20, null);
+        g.translate(-10, -10);
+        g.drawImage(image, 0, 0, null);
         g.setTransform(prevTrans);
     }
 
     public void move() {
-        moveX(xVel);
-        moveY(yVel);
+        synchronized (Fish.class) {
+            moveX(xVel);
+            moveY(yVel);
 
-        double closeFish = 0;
-        double avgFishX = 0;
-        double avgFishY = 0;
-        double avgFishVX = 0;
-        double avgFishVY = 0;
-        DLList<Fish> closeFishes = new DLList<>();
-        for (Fish f : fish) {
-            double dist2 = dist2(f);
-            if (dist2 < 10000) {
-                if (f != this && dist2 != 0) {
-                    closeFish += 1 / dist2;
-                    avgFishX += f.x / dist2;
-                    avgFishY += f.y / dist2;
-                    avgFishVX += f.xVel / dist2;
-                    avgFishVY += f.yVel / dist2;
+            double closeFish = 0;
+            double avgFishX = 0;
+            double avgFishY = 0;
+            double avgFishVX = 0;
+            double avgFishVY = 0;
+            DLList<Fish> closeFishes = new DLList<>();
+            for (Fish f : fish) {
+                double dist2 = dist2(f);
+                if (dist2 < 10000) {
+                    if (f != this && dist2 != 0) {
+                        closeFish += 1 / dist2;
+                        avgFishX += f.x / dist2;
+                        avgFishY += f.y / dist2;
+                        avgFishVX += f.xVel / dist2;
+                        avgFishVY += f.yVel / dist2;
+                    }
+                    if (f != this && dist2 < 1600) {
+                        closeFishes.add(f);
+                    }
                 }
-                if (f != this && dist2 < 1600) {
-                    closeFishes.add(f);
+            }
+            if (closeFish == 0) {
+                return;
+            }
+            avgFishX /= closeFish;
+            avgFishY /= closeFish;
+            avgFishVX /= closeFish;
+            avgFishVY /= closeFish;
+            // move closer to fish center of fish
+            double distToAvgX = avgFishX - x;
+            double distToAvgY = avgFishY - y;
+            xVel += distToAvgX / 1000;
+            yVel += distToAvgY / 1000;
+
+            // align velocity with other fish, keeping the same magnitude of velocity as
+            // before
+            double oldMagnitude = Math.sqrt(xVel * xVel + yVel * yVel);
+            xVel = xVel * 0.9 + avgFishVX * 0.1;
+            yVel = yVel * 0.9 + avgFishVY * 0.1;
+            double newMagnitude = Math.sqrt(xVel * xVel + yVel * yVel);
+            if (newMagnitude != 0 && oldMagnitude != 0) {
+                xVel = xVel * oldMagnitude / newMagnitude;
+                yVel = yVel * oldMagnitude / newMagnitude;
+            }
+
+            // repel from the closest fish (1/d)
+            for (Fish f : closeFishes) {
+                double closestFishDX = f.x - x;
+                double closestFishDY = f.y - y;
+                if (closestFishDX != 0) {
+                    xVel -= 15 / (closestFishDX + 5 * Math.abs(closestFishDX) / closestFishDX);
+                } else {
+                    xVel += Math.random() - 0.5;
+                }
+                if (closestFishDY != 0) {
+                    yVel -= 15 / (closestFishDY + 5 * Math.abs(closestFishDY) / closestFishDY);
+                } else {
+                    yVel += Math.random() - 0.5;
                 }
             }
-        }
-        avgFishX /= closeFish;
-        avgFishY /= closeFish;
-        avgFishVX /= closeFish;
-        avgFishVY /= closeFish;
-        // move closer to fish center of fish
-        double distToAvgX = avgFishX - x;
-        double distToAvgY = avgFishY - y;
-        xVel += distToAvgX / 1000;
-        yVel += distToAvgY / 1000;
 
-        // align velocity with other fish, keeping the same magnitude of velocity as
-        // before
-        double oldMagnitude = Math.sqrt(xVel * xVel + yVel * yVel);
-        xVel = xVel * 0.9 + avgFishVX * 0.1;
-        yVel = yVel * 0.9 + avgFishVY * 0.1;
-        double newMagnitude = Math.sqrt(xVel * xVel + yVel * yVel);
-        if (newMagnitude != 0 && oldMagnitude != 0) {
-            xVel = xVel * oldMagnitude / newMagnitude;
-            yVel = yVel * oldMagnitude / newMagnitude;
-        }
-
-        // repel from the closest fish (1/d)
-        for (Fish f : closeFishes) {
-            double closestFishDX = f.x - x;
-            double closestFishDY = f.y - y;
-            if (closestFishDX != 0) {
-                xVel -= 15 / (closestFishDX + 5 * Math.abs(closestFishDX) / closestFishDX);
-            } else {
-                xVel += Math.random() - 0.5;
+            // lerp normalize velocity to 2 at 0.95/frame
+            double magnitude = Math.sqrt(xVel * xVel + yVel * yVel);
+            if (magnitude != 0) {
+                double lerpedXVel = xVel * 2 / magnitude;
+                double lerpedYVel = yVel * 2 / magnitude;
+                xVel = 0.2 * xVel + 0.8 * lerpedXVel;
+                yVel = 0.2 * yVel + 0.8 * lerpedYVel;
             }
-            if (closestFishDY != 0) {
-                yVel -= 15 / (closestFishDY + 5 * Math.abs(closestFishDY) / closestFishDY);
-            } else {
-                yVel += Math.random() - 0.5;
-            }
-        }
-
-        // lerp normalize velocity to 2 at 0.95/frame
-        double magnitude = Math.sqrt(xVel * xVel + yVel * yVel);
-        if (magnitude != 0) {
-            double lerpedXVel = xVel * 2 / magnitude;
-            double lerpedYVel = yVel * 2 / magnitude;
-            xVel = 0.2 * xVel + 0.8 * lerpedXVel;
-            yVel = 0.2 * yVel + 0.8 * lerpedYVel;
-        }
-
-        if(xVel == Double.NaN) {
-            System.out.println("AHA");
         }
     }
 
@@ -209,7 +209,7 @@ public class Fish implements WanderingObject {
         if (!tiles.containsKey(tile) || !tiles.get(tile).get(0).isBackground()) {
             return true;
         }
-        return tiles.get(tile).stream().anyMatch(e -> (e != TileObject.WATER && e != TileObject.LAVA));
+        return tiles.get(tile).stream().anyMatch(e -> (e != TileObject.WATER));
     }
 
     @Override

@@ -1,41 +1,44 @@
 public class TileChangeEvent {
-    public TileObject from;
-    public TileObject to;
-    public DLList<Square> squares = new DLList<>();
+    private HashMap<Square, TileObject> replacerMap;
+    private HashMap<Square, TileObject> replaceeMap;
 
-    public void undo(HashTable<Square, TileObject> tileMap) {
-        for(Square s : squares) {
-            if(from == null) {
-                if(tileMap.containsKey(s)) {
-                    tileMap.remove(s, to);
-                }
-            } else {
-                if(tileMap.containsKey(s)) {
-                    if(to == null) {
-                        tileMap.put(s, from);
-                    } else {
-                        tileMap.get(s).set(tileMap.get(s).indexOf(to), from);
-                    }
+    public TileChangeEvent() {
+        replaceeMap = new HashMap<>();
+        replacerMap = new HashMap<>();
+    }
+
+    public synchronized void undo(HashTable<Square, TileObject> tileMap) {
+        for (Square s : replacerMap.keySet()) {
+            tileMap.remove(s, replacerMap.get(s));
+        }
+        for (Square s : replaceeMap.keySet()) {
+            if (!tileMap.containsKey(s)) {
+                tileMap.put(s, replaceeMap.get(s));
+            } else if (!tileMap.get(s).contains(replaceeMap.get(s))) {
+                if (replaceeMap.get(s).isBackground()) {
+                    tileMap.get(s).set(0, replaceeMap.get(s));
+                } else {
+                    tileMap.put(s, replaceeMap.get(s));
                 }
             }
         }
     }
 
-    public void redo(HashTable<Square, TileObject> tileMap) {
-        for(Square s : squares) {
-            if(to == null) {
-                if(tileMap.containsKey(s)) {
-                    tileMap.remove(s, from);
-                }
-            } else {
-                if(tileMap.containsKey(s)) {
-                    if(to == null) {
-                        tileMap.put(s, to);
-                    } else {
-                        tileMap.get(s).set(tileMap.get(s).indexOf(from), to);
-                    }
-                }
-            }
+    public synchronized void redo(HashTable<Square, TileObject> tileMap) {
+        HashMap<Square, TileObject> temp = replaceeMap;
+        replaceeMap = replacerMap;
+        replacerMap = temp;
+        undo(tileMap);
+        replacerMap = replaceeMap;
+        replaceeMap = temp;
+    }
+
+    public void addReplacement(Square sq, TileObject replacee, TileObject replacer) {
+        if (replacee != null) {
+            replaceeMap.put(sq, replacee);
+        }
+        if (replacer != null) {
+            replacerMap.put(sq, replacer);
         }
     }
 }

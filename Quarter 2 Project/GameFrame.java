@@ -7,7 +7,7 @@ import java.awt.geom.AffineTransform;
 import javax.swing.JPanel;
 
 public class GameFrame extends JPanel {
-    private static final int rows = 50, cols = 50;
+    private static final int rows = 100, cols = 100;
     private HashTable<Square, TileObject> tileMap;
     private int keyFrame;
     private double centerX, centerY, zoomAmt;
@@ -40,11 +40,11 @@ public class GameFrame extends JPanel {
         tileMap = new HashTable<>();
         for (int i = 0; i < rows; i++) {
             for (int j = 0; j < cols; j++) {
-                tileMap.put(new Square(i+5000, j+5000), TileObject.WATER);
+                tileMap.put(new Square(i + 5000, j + 5000), TileObject.WATER);
             }
         }
-        centerX = (rows) * 25 / 2 + 5000*25;
-        centerY = (cols) * 25 / 2 + 5000*25;
+        centerX = (rows) * 25 / 2 + 5000 * 25;
+        centerY = (cols) * 25 / 2 + 5000 * 25;
         zoomAmt = 1.0;
 
         wanderingObjects = new DLList<>();
@@ -174,13 +174,15 @@ public class GameFrame extends JPanel {
                     clickQueue.pop();
                     continue;
                 }
-                if(upcomingChange == null) {
+                if (upcomingChange == null) {
                     upcomingChange = new TileChangeEvent();
-                    upcomingChange.from = tileMap.containsKey(sq) ? tileMap.get(sq).getFirst() : null;
                 }
                 TileObject t = null;
                 switch (clickQueue.peek().type()) {
                     case "Delete" -> {
+                        if (tileMap.containsKey(sq)) {
+                            upcomingChange.addReplacement(sq, tileMap.get(sq).getLast(), null);
+                        }
                         tileMap.removeLast(sq);
                     }
                     case "Grass" -> {
@@ -214,13 +216,12 @@ public class GameFrame extends JPanel {
                         throw new IllegalArgumentException("Unexpected click type: " + clickQueue.peek().type());
                     }
                 }
-                if(t != null) {
+                if (t != null) {
                     addTile(sq, t);
                 }
-                upcomingChange.to = t;
                 lastUsedSquare = sq;
                 clickQueue.pop();
-                
+
             }
         }
 
@@ -237,19 +238,21 @@ public class GameFrame extends JPanel {
                 }
             }
             if (tileMap.get(sq).get(0).isBackground()) {
+                upcomingChange.addReplacement(sq, tileMap.get(sq).getFirst(), t);
                 tileMap.get(sq).set(0, t);
             } else {
+                upcomingChange.addReplacement(sq, null, t);
                 tileMap.get(sq).add(0, t);
             }
 
         } else {
+            upcomingChange.addReplacement(sq, null, t);
             tileMap.put(sq, t);
         }
     }
 
     private void addTile(Square sq, TileObject t) {
-        upcomingChange.squares.add(sq);
-        if(t.isBackground()) {
+        if (t.isBackground()) {
             addBgTile(sq, t);
         } else {
             addFgTile(sq, t);
@@ -257,16 +260,18 @@ public class GameFrame extends JPanel {
     }
 
     private void fillTile(Square sq, TileObject replacement, TileObject replacee) {
-        upcomingChange.squares.add(sq);
         if (replacee.isBackground()) {
             if (tileMap.get(sq).get(0).isBackground()) {
+                upcomingChange.addReplacement(sq, replacee, replacement);
                 tileMap.get(sq).set(0, replacement);
             } else {
-                tileMap.get(sq).add(0, replacee);
+                upcomingChange.addReplacement(sq, null, replacement);
+                tileMap.get(sq).add(0, replacement);
             }
         } else {
             if (!tileMap.get(sq).contains(replacee)) {
-                tileMap.put(sq, replacee);
+                upcomingChange.addReplacement(sq, null, replacement);
+                tileMap.put(sq, replacement);
             }
         }
 
@@ -288,13 +293,16 @@ public class GameFrame extends JPanel {
                 } catch (StackOverflowError e) {
 
                 }
-            }
-            if (tileMap.get(sq).contains(t)) {
-                return;
             } else {
-                tileMap.put(sq, t);
+                if (tileMap.get(sq).contains(t)) {
+                    return;
+                } else {
+                    upcomingChange.addReplacement(sq, null, t);
+                    tileMap.put(sq, t);
+                }
             }
         } else {
+            upcomingChange.addReplacement(sq, null, t);
             tileMap.put(sq, t);
         }
     }
@@ -338,9 +346,10 @@ public class GameFrame extends JPanel {
                     } catch (InterruptedException e) {
                         break;
                     }
-
-                    for (WanderingObject w : wanderingObjects) {
-                        w.move();
+                    synchronized (Fish.class) {
+                        for (WanderingObject w : wanderingObjects) {
+                            w.move();
+                        }
                     }
                 }
             }
@@ -351,9 +360,13 @@ public class GameFrame extends JPanel {
     }
 
     public void stop() {
-        wanderingObjectThread.interrupt();
-        wanderingObjects.clear();
-        playing = false;
+        synchronized (Fish.class) {
+            wanderingObjectThread.interrupt();
+            wanderingObjects.clear();
+            wanderingObjects = new DLList<>();
+            System.gc();
+            playing = false;
+        }
     }
 
     public boolean hasStartPos() {
@@ -361,16 +374,20 @@ public class GameFrame extends JPanel {
     }
 
     public void undo() {
-        if (!undoStack.isEmpty()) {
-            undoStack.peek().undo(tileMap);
-            redoStack.push(undoStack.pop());
+        synchronized (undoStack) {
+            if (!playing && !undoStack.isEmpty()) {
+                undoStack.peek().undo(tileMap);
+                redoStack.push(undoStack.pop());
+            }
         }
     }
 
     public void redo() {
-        if (!redoStack.isEmpty()) {
-            redoStack.peek().redo(tileMap);
-            undoStack.push(redoStack.pop());
+        synchronized (redoStack) {
+            if (!playing && !redoStack.isEmpty()) {
+                redoStack.peek().redo(tileMap);
+                undoStack.push(redoStack.pop());
+            }
         }
     }
 
@@ -381,7 +398,7 @@ public class GameFrame extends JPanel {
     }
 
     public void cancelChangeEvent() {
-        if(upcomingChange != null) {
+        if (upcomingChange != null) {
             upcomingChange.undo(tileMap);
             upcomingChange = null;
         }

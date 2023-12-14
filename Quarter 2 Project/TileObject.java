@@ -65,8 +65,10 @@ public enum TileObject {
                 g.fillRect(x, y, 25, 25);
             }
             case LAVA -> {
-                g.setColor(new Color(200, 100, 0));
+                g.setColor(new Color(250, 150, 100));
                 g.fillRect(x, y, 25, 25);
+                g.setColor(new Color(250, 200, 200));
+                g.fill(new Rectangle2D.Double(x, y + (11+10*Math.sin(keyFrame / 100.0 + x)), 25, 4));
             }
             case STONE -> {
                 g.setColor(Color.GRAY);
