@@ -233,6 +233,7 @@ public class GameFrame extends JPanel {
             if (keysPressed.getOrDefault(17, false)) {
                 try {
                     fillTile(sq, t, tileMap.get(sq).getFirst());
+                    return;
                 } catch (StackOverflowError e) {
 
                 }
@@ -290,6 +291,7 @@ public class GameFrame extends JPanel {
             if (keysPressed.getOrDefault(17, false)) {
                 try {
                     fillTile(sq, t, tileMap.get(sq).getFirst());
+                    return;
                 } catch (StackOverflowError e) {
 
                 }
