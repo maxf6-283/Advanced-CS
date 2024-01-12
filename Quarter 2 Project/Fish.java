@@ -119,8 +119,8 @@ public class Fish implements WanderingObject {
             if (magnitude != 0) {
                 double lerpedXVel = xVel * 2 / magnitude;
                 double lerpedYVel = yVel * 2 / magnitude;
-                xVel = 0.2 * xVel + 0.8 * lerpedXVel;
-                yVel = 0.2 * yVel + 0.8 * lerpedYVel;
+                xVel = 0.05 * xVel + 0.95 * lerpedXVel;
+                yVel = 0.05 * yVel + 0.95 * lerpedYVel;
             }
         }
     }

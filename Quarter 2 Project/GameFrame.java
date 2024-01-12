@@ -58,10 +58,12 @@ public class GameFrame extends JPanel {
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
         g.setColor(Color.BLACK);
-        g.fillRect(0, 0, getWidth(), getWidth());
+        int width2 = getWidth();
+        int height2 = getHeight();
+        g.fillRect(0, 0, width2, height2);
         Graphics2D g2d = (Graphics2D) g;
         AffineTransform prevTrans = g2d.getTransform();
-        g2d.translate(getWidth() / 2, getHeight() / 2);
+        g2d.translate(width2 / 2, height2 / 2);
         g2d.scale(zoomAmt, zoomAmt);
         if (playing) {
             g2d.translate(-player.x(), -player.y());
@@ -72,10 +74,10 @@ public class GameFrame extends JPanel {
         startPos = null;
         double x = playing ? player.x() : centerX;
         double y = playing ? player.y() : centerY;
-        int leftmostTilePos = (int) (((x - getWidth() / 2 / zoomAmt) / 25)) - 1;
-        int rightmostTilePos = (int) (((x + getWidth() / 2 / zoomAmt) / 25)) + 1;
-        int topmostTilePos = (int) (((y - getHeight() / 2 / zoomAmt) / 25)) - 1;
-        int bottommostTilePos = (int) (((y + getHeight() / 2 / zoomAmt) / 25)) + 1;
+        int leftmostTilePos = (int) (((x - width2 / 2 / zoomAmt) / 25)) - 1;
+        int rightmostTilePos = (int) (((x + width2 / 2 / zoomAmt) / 25)) + 1;
+        int topmostTilePos = (int) (((y - height2 / 2 / zoomAmt) / 25)) - 1;
+        int bottommostTilePos = (int) (((y + height2 / 2 / zoomAmt) / 25)) + 1;
 
         for (Square s : tileMap.keySet()) {
             for (TileObject t : tileMap.get(s)) {
@@ -95,8 +97,8 @@ public class GameFrame extends JPanel {
                 w.paint(g2d);
             }
         } else {
-            double mouseX = (mouseXPos - getWidth() / 2) / zoomAmt + centerX;
-            double mouseY = (mouseYPos - getHeight() / 2) / zoomAmt + centerY;
+            double mouseX = (mouseXPos - width2 / 2) / zoomAmt + centerX;
+            double mouseY = (mouseYPos - height2 / 2) / zoomAmt + centerY;
             g2d.setColor(new Color(255, 255, 255, 100));
             g2d.fillRect((int) mouseX / 25 * 25, (int) mouseY / 25 * 25, 25, 25);
         }
@@ -378,6 +380,9 @@ public class GameFrame extends JPanel {
     public void undo() {
         synchronized (undoStack) {
             if (!playing && !undoStack.isEmpty()) {
+                while(undoStack.peek() == null) {
+                    undoStack.pop();
+                }
                 undoStack.peek().undo(tileMap);
                 redoStack.push(undoStack.pop());
             }
@@ -387,6 +392,9 @@ public class GameFrame extends JPanel {
     public void redo() {
         synchronized (redoStack) {
             if (!playing && !redoStack.isEmpty()) {
+                while(redoStack.peek() == null) {
+                    redoStack.pop();
+                }
                 redoStack.peek().redo(tileMap);
                 undoStack.push(redoStack.pop());
             }

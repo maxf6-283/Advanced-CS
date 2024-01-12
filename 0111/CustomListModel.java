@@ -1,5 +1,6 @@
 import java.util.Comparator;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.function.Predicate;
 import java.util.function.Function;
@@ -19,8 +20,7 @@ public class CustomListModel<T1, T2> extends AbstractListModel<T2> {
     private List<T1> activeArray;
     public ArrayList<Predicate<? super T1>> filters;
     private Function<T1, T2> toT2;
-    private Comparator<T1> comparer;
-
+    
     @SuppressWarnings("unchecked")
     public CustomListModel(Collection<T1> backingList) {
         this(backingList, e -> ((T2)e));
@@ -36,8 +36,6 @@ public class CustomListModel<T1, T2> extends AbstractListModel<T2> {
 
         filters = new ArrayList<>();
         activeArray = new ArrayList<>(backingList);;
-
-        comparer = sorter;
     }
 
     @Override
@@ -65,8 +63,6 @@ public class CustomListModel<T1, T2> extends AbstractListModel<T2> {
         for (Predicate<? super T1> pred : filters) {
             activeArray = new ArrayList<>(activeArray.stream().filter(pred).toList());
         }
-
-        activeArray.sort(comparer);
 
         if (activeArray.size() > oldSize) {
             fireIntervalAdded(this, 0, activeArray.size() - oldSize);
