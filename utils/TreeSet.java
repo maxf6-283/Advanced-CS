@@ -3,6 +3,7 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.Comparator;
 import java.lang.Comparable;
+import java.lang.reflect.Array;
 
 public class TreeSet<E> implements Set<E> {
     private int size;
@@ -115,14 +116,26 @@ public class TreeSet<E> implements Set<E> {
 
     @Override
     public Object[] toArray() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'toArray'");
+        Object[] arr = new Object[size];
+        Iterator<E> iter = new TreeSetIterator();
+        for(int i = 0; i < size; i++) {
+            arr[i] = iter.next();
+        }
+
+        return arr;
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <T> T[] toArray(T[] a) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'toArray'");
+        T[] arr;
+        if(a.length > size) {
+            arr = a;
+        } else {
+            arr = (T[])Array.newInstance(a.getClass().componentType(), size);
+        }
+
+        return arr;
     }
 
     @Override
