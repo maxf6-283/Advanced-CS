@@ -145,4 +145,28 @@ public class BinaryTree<E extends Comparable<E>> {
 
         return index;
     }
+
+    public E get(E data) {
+        return get(data, root);
+    }
+
+    private E get(E data, Node<E> node) {
+        passes++;
+        int comp = data.compareTo(node.get());
+        if(comp < 0) {
+            if(node.getLeft() == null) {
+                return null;
+            } else {
+                return get(data, node.getLeft());
+            }
+        } else if (comp > 0) {
+            if(node.getRight() == null) {
+                return null;
+            } else {
+                return get(data, node.getRight());
+            }
+        } else {
+            return node.get();
+        }
+    }
 }
