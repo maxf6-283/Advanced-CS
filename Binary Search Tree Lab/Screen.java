@@ -53,6 +53,7 @@ public class Screen extends JFrame implements ActionListener, ListSelectionListe
     private JButton withdraw;
     private JButton deposit;
     private JButton logout;
+    private Account acc;
 
     public Screen() {
         super("Account manager");
@@ -127,7 +128,7 @@ public class Screen extends JFrame implements ActionListener, ListSelectionListe
         login.setBounds(50, 135, 200, 50);
         loginPasses.setBounds(50, 185, 200, 25);
         login.addActionListener(this);
-
+        
         accInfo = new JLabel();
         setCustomerInfoText("");
         amount = new PlaceholderTextField("Amount");
@@ -135,9 +136,17 @@ public class Screen extends JFrame implements ActionListener, ListSelectionListe
         withdraw = new JButton("Withdraw");
         logout = new JButton("Log out");
         accInfo.setBounds(300, 50, 200, 70);
-        logout.setBounds(300, 130, 200, 70);
-        
-        
+        logout.setBounds(300, 130, 200, 50);
+        amount.setBounds(300, 250, 200, 25);
+        deposit.setBounds(300, 285, 95, 50);
+        withdraw.setBounds(405, 285, 95, 50);
+        logout.addActionListener(this);
+        deposit.addActionListener(this);
+        withdraw.addActionListener(this);
+        deposit.setEnabled(false);
+        withdraw.setEnabled(false);
+        logout.setEnabled(false);
+
         // --- switch ---
 
         adminView = true;
@@ -196,6 +205,7 @@ public class Screen extends JFrame implements ActionListener, ListSelectionListe
         } else if (e.getSource() == switchViews) {
             if (adminView) {
                 adminView = false;
+                accountList.setSelectedValue(null, false);
                 switchViews.setText("Switch to admin view");
                 for (JComponent j : adminComponents) {
                     j.setVisible(false);
@@ -213,6 +223,41 @@ public class Screen extends JFrame implements ActionListener, ListSelectionListe
                     j.setVisible(false);
                 }
             }
+        } else if (e.getSource() == login) {
+            accounts.resetPasses();
+            acc = accounts.get(new Account(loginLName.getText(), loginFName.getText(), -1, -1.0));
+            if(acc.pin() == Integer.parseInt(loginPin.getText())) {
+                deposit.setEnabled(true);
+                withdraw.setEnabled(true);
+                logout.setEnabled(true);
+                login.setEnabled(false);
+                setCustomerInfoText("First Name: " + acc.getFirstName() + "<br>" +
+                "Last name: " + acc.getLastName() + "<br>" +
+                "Balance: " + acc.getBalance());
+                loginPasses.setText("Passes: " + accounts.passes());
+                loginFName.setText("");
+                loginLName.setText("");
+            } else {
+                setCustomerInfoText("Invalid PIN");
+            }
+            loginPin.setText("");
+        } else if (e.getSource() == logout) {
+            setCustomerInfoText("");
+            loginPasses.setText("");
+            deposit.setEnabled(false);
+            withdraw.setEnabled(false);
+            logout.setEnabled(false);
+            login.setEnabled(true);
+        } else if (e.getSource() == deposit) {
+            acc.deposit(Double.parseDouble(amount.getText()));
+            setCustomerInfoText("First Name: " + acc.getFirstName() + "<br>" +
+                        "Last name: " + acc.getLastName() + "<br>" +
+                        "Balance: " + acc.getBalance());
+        } else if (e.getSource() == withdraw) {
+            acc.deposit(-Double.parseDouble(amount.getText()));
+            setCustomerInfoText("First Name: " + acc.getFirstName() + "<br>" +
+                        "Last name: " + acc.getLastName() + "<br>" +
+                        "Balance: " + acc.getBalance());
         }
     }
 

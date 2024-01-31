@@ -51,4 +51,8 @@ public class Account implements Comparable<Account> {
     public String getBalance() {
         return String.format("%.2f", balance);
     }
+
+    public void deposit(double i) {
+        balance += i;
+    }
 }
