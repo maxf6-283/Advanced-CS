@@ -21,6 +21,11 @@ public class Node<E> {
     }
 
     public void setLeft(Node<E> n) {
+        if(left != null) {
+            if(left.parent == this) {
+                left.parent = null;
+            }
+        }
         left = n;
         if (n != null) {
             n.parent = this;
@@ -28,6 +33,11 @@ public class Node<E> {
     }
 
     public void setRight(Node<E> n) {
+        if(right != null) {
+            if(right.parent == this) {
+                right.parent = null;
+            }
+        }
         right = n;
         if (n != null) {
             n.parent = this;
