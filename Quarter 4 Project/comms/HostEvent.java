@@ -1,5 +1,7 @@
 package comms;
 
+import game.LaserEvent;
+
 public class HostEvent {
     private static final String sep = new String(new char[]{(char)0});
     private String type;
@@ -24,6 +26,10 @@ public class HostEvent {
 
     public double valueDouble() {
         return Double.parseDouble(value);
+    }
+
+    public LaserEvent valueLaser() {
+        return LaserEvent.parse(value);
     }
 
     public String type() {

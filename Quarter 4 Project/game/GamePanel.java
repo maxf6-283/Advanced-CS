@@ -18,12 +18,15 @@ public class GamePanel extends Panel implements Runnable, KeyListener {
     private Frame parentFrame;
     private boolean active;
     private Player meee;
+    private Player camFollowee;
     private double camX;
     private double camY;
     private boolean focused = false;
     private int[] starPositionXs;
     private int[] starPositionYs;
     private float[][] gas;
+    private int cooldownTime = 0;
+    private boolean firing = false;
 
     public GamePanel(Frame f) {
         parentFrame = f;
@@ -42,11 +45,19 @@ public class GamePanel extends Panel implements Runnable, KeyListener {
         float[][] newGas = new float[gas.length][gas[0].length];
         for (int i = 0; i < newGas.length; i++) {
             for (int j = 0; j < newGas[i].length; j++) {
-                newGas[i][j] = gas[i][j] * 0.87f
-                        + gas[(i - 1 + gas.length) % gas.length][j] * 0.03f
-                        + gas[(i + 1) % gas.length][j] * 0.03f
-                        + gas[i][(j - 1 + gas[i].length) % gas[i].length] * 0.03f
-                        + gas[i][(j + 1) % gas[i].length] * 0.03f;
+                if (gas[i][j] < 1.0f) {
+                    newGas[i][j] = gas[i][j] * 0.87f
+                            + gas[(i - 1 + gas.length) % gas.length][j] * 0.03f
+                            + gas[(i + 1) % gas.length][j] * 0.03f
+                            + gas[i][(j - 1 + gas[i].length) % gas[i].length] * 0.03f
+                            + gas[i][(j + 1) % gas[i].length] * 0.03f;
+                } else {
+                    newGas[i][j] = gas[i][j] * 0.75f
+                            + gas[(i - 1 + gas.length) % gas.length][j] * 0.05f
+                            + gas[(i + 1) % gas.length][j] * 0.05f
+                            + gas[i][(j - 1 + gas[i].length) % gas[i].length] * 0.05f
+                            + gas[i][(j + 1) % gas[i].length] * 0.05f;
+                }
             }
         }
 
@@ -79,14 +90,15 @@ public class GamePanel extends Panel implements Runnable, KeyListener {
         g2d.scale(scale, scale);
         g2d.setColor(Color.WHITE);
         for (int i = 0; i < starPositionXs.length; i++) {
-            g2d.fillRect((starPositionXs[i] + (int) camX - (int)meee.x() + Player.fieldWidth) % Player.fieldWidth,
-                    (starPositionYs[i] + (int) camY - (int)meee.y() + Player.fieldHeight) % Player.fieldHeight, 4, 4);
+            g2d.fillRect((starPositionXs[i] + (int) camX - (int) camFollowee.x() + Player.fieldWidth) % Player.fieldWidth,
+                    (starPositionYs[i] + (int) camY - (int) camFollowee.y() + Player.fieldHeight) % Player.fieldHeight, 4, 4);
         }
 
-        int cX = (int)camX;
-        int cY = (int)camY;
-        int w = (int)(getWidth() / scale);
-        int h = (int)(getHeight() / scale);        
+        //behold: the gas code of beauty
+        int cX = (int) camX;
+        int cY = (int) camY;
+        int w = (int) (getWidth() / scale);
+        int h = (int) (getHeight() / scale);
         for (int i = (cX - w / 2) / gasConstant
                 - 1; i < (cX + w / 2) / gasConstant + 1; i++) {
             for (int j = (cY - h / 2) / gasConstant
@@ -94,7 +106,8 @@ public class GamePanel extends Panel implements Runnable, KeyListener {
                 int iA = (i + gas.length) % gas.length;
                 int jA = (j + gas[iA].length) % gas[iA].length;
                 if (gas[iA][jA] > 0.05) {
-                    g2d.setColor(new Color(1.0f - gas[iA][jA], 1.0f, 1.0f, gas[iA][jA]));
+                    float val = gas[iA][jA] > 1.0f ? 1.0f : gas[iA][jA];
+                    g2d.setColor(new Color(1.0f - val, 1.0f, 1.0f, val));
                     g2d.fillRect(i * gasConstant - cX + w / 2,
                             j * gasConstant - cY + h / 2, gasConstant, gasConstant);
                 }
@@ -113,9 +126,10 @@ public class GamePanel extends Panel implements Runnable, KeyListener {
 
     @Override
     public void run() {
-        //updateGas's very own thread
+        camFollowee = meee;
+        // updateGas's very own thread
         (new Thread(() -> {
-            while(true) {
+            while (true) {
                 try {
                     Thread.sleep(50);
                 } catch (InterruptedException e) {
@@ -156,31 +170,47 @@ public class GamePanel extends Panel implements Runnable, KeyListener {
             parentFrame.hostManager().flush();
 
             // lerp the camera to the player at 0.85 lerpiness
-            if (Math.abs(camX - meee.x()) > Player.fieldWidth / 2) {
-                if (camX > meee.x()) {
+            if (Math.abs(camX - camFollowee.x()) > Player.fieldWidth / 2) {
+                if (camX > camFollowee.x()) {
                     camX -= Player.fieldWidth;
                 } else {
                     camX += Player.fieldWidth;
                 }
             }
-            if (Math.abs(camY - meee.y()) > Player.fieldHeight / 2) {
-                if (camY > meee.y()) {
+            if (Math.abs(camY - camFollowee.y()) > Player.fieldHeight / 2) {
+                if (camY > camFollowee.y()) {
                     camY -= Player.fieldHeight;
                 } else {
                     camY += Player.fieldHeight;
                 }
             }
-            camX = camX * 0.85 + meee.x() * 0.15;
-            camY = camY * 0.85 + meee.y() * 0.15;
+            camX = camX * 0.85 + camFollowee.x() * 0.15;
+            camY = camY * 0.85 + camFollowee.y() * 0.15;
 
-            // updateGas();
-            //updateGas needs its own fricking thread bc its so slow and i don't want to figure out how to optimize it
+            if(cooldownTime > 0) {
+                cooldownTime--;
+            }
+            if(firing && cooldownTime == 0 && !meee.dead()) {
+                cooldownTime = 30;
+                meee.addLaser();
+            }
+
+            //collision detection
+            playerCollision:
+            for(Optional<Player> p : players()) {
+                if(p.isPresent()) {
+                    if(p.get().lasered(meee)) {
+                        meee.die();
+                        camFollowee = p.get();
+                        break playerCollision;
+                    }
+                }
+            }
         }
     }
 
     @Override
     public void keyTyped(KeyEvent e) {
-        // What is even the point of this method
     }
 
     @Override
@@ -195,6 +225,9 @@ public class GamePanel extends Panel implements Runnable, KeyListener {
             case KeyEvent.VK_RIGHT -> {
                 meee.setTurn(1);
             }
+            case KeyEvent.VK_Z -> {
+                firing = true;
+            }
         }
         focused = true;
     }
@@ -206,12 +239,15 @@ public class GamePanel extends Panel implements Runnable, KeyListener {
                 meee.setThrust(false);
             }
             case KeyEvent.VK_LEFT -> {
-                if(meee.getTurn() == -1)
+                if (meee.getTurn() == -1)
                     meee.setTurn(0);
-                }
-                case KeyEvent.VK_RIGHT -> {
-                if(meee.getTurn() == 1)
+            }
+            case KeyEvent.VK_RIGHT -> {
+                if (meee.getTurn() == 1)
                     meee.setTurn(0);
+            }
+            case KeyEvent.VK_Z -> {
+                firing = false;
             }
         }
     }

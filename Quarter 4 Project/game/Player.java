@@ -5,12 +5,16 @@ import java.awt.image.BufferedImage;
 import javax.imageio.ImageIO;
 import java.io.File;
 import java.io.IOException;
-
+import java.awt.Font;
 import java.awt.geom.AffineTransform;
+import java.awt.Color;
+import java.awt.FontMetrics;
 
 import comms.ClientEvent;
 import comms.HostEvent;
 import comms.HostManager;
+import gui.Button;
+import utils.ArrayList;
 
 public class Player {
     public static final int fieldWidth = 5000;
@@ -18,6 +22,8 @@ public class Player {
 
     public static final BufferedImage redRocket;
     public static final BufferedImage blueRocket;
+
+    private static final Font usernameFont;
 
     static {
         BufferedImage rr = null;
@@ -30,6 +36,8 @@ public class Player {
         }
         redRocket = rr;
         blueRocket = br;
+
+        usernameFont = Button.font.deriveFont(20.0f);
     }
 
     private int num;
@@ -51,6 +59,13 @@ public class Player {
     private int turning;
     private int lastSentTurning;
     private String username;
+    private boolean dead = false;
+    private boolean sentDead = false;
+
+    private ArrayList<Laser> lasers = new ArrayList<>();
+    private ArrayList<Integer> laserTime = new ArrayList<>();
+    private static final int laserExpiration = 200;
+    private boolean sentLastLaser = true;
 
     public Player(HostEvent createEvent) {
         if (createEvent.type().equals("create")) {
@@ -71,6 +86,9 @@ public class Player {
     }
 
     public synchronized void acceptHostEvent(HostEvent e) {
+        if(dead) {
+            System.out.println("Wait. That's illegal: " + e);
+        }
         if (e.playerNum() != num) {
             throw new IllegalArgumentException(
                     "Host Event for player " + e.playerNum() + " cannot be applied to " + num);
@@ -109,10 +127,33 @@ public class Player {
             case "setturning" -> {
                 turning = e.valueInt();
             }
+            case "die" -> {
+                dead = true;
+            }
+            case "laser" -> {
+                LaserEvent ev = e.valueLaser();
+                if (ev.type().equals("create")) {
+                    if (lasers.size() != ev.laserNum()) {
+                        throw new IllegalArgumentException(
+                                "Cannot add laser " + ev.laserNum() + " to laser array of size " + lasers.size());
+                    }
+                    System.out.println("new laser added");
+                    lasers.add(new Laser(ev));
+                    laserTime.add(laserExpiration);
+                } else if (ev.type().equals("destroy")) {
+                    lasers.remove(ev.laserNum());
+                    laserTime.remove(ev.laserNum());
+                } else {
+                    lasers.get(ev.laserNum()).acceptLaserEvent(ev);
+                }
+            }
         }
     }
 
     public synchronized void move(float[][] gas) {
+        if (dead) {
+            return;
+        }
         x += xVel;
         if (x > fieldWidth) {
             x -= fieldWidth;
@@ -151,19 +192,23 @@ public class Player {
 
             gasX = (gasX + gas.length) % gas.length;
             gasY = (gasY + gas[gasX].length) % gas[gasX].length;
-            gas[gasX][gasY] = 1.0f;
+            gas[gasX][gasY] += 1.0f;
             gasX = (gasX - 1 + gas.length) % gas.length;
             gasY = (gasY + gas[gasX].length) % gas[gasX].length;
-            gas[gasX][gasY] = 1.0f;
+            gas[gasX][gasY] += 0.5f;
             gasX = (gasX + 1 + gas.length) % gas.length;
             gasY = (gasY - 1 + gas[gasX].length) % gas[gasX].length;
-            gas[gasX][gasY] = 1.0f;
+            gas[gasX][gasY] += 0.5f;
             gasX = (gasX + gas.length) % gas.length;
             gasY = (gasY + 2 + gas[gasX].length) % gas[gasX].length;
-            gas[gasX][gasY] = 1.0f;
+            gas[gasX][gasY] += 0.5f;
             gasX = (gasX + 1 + gas.length) % gas.length;
             gasY = (gasY - 1 + gas[gasX].length) % gas[gasX].length;
-            gas[gasX][gasY] = 1.0f;
+            gas[gasX][gasY] += 0.5f;
+        }
+
+        for (Laser laser : lasers) {
+            laser.move();
         }
     }
 
@@ -176,6 +221,9 @@ public class Player {
     }
 
     public boolean draw(Graphics2D g, double cX, double cY, int screenWidth, int screenHeight, boolean meee) {
+        if(dead) {
+            return false;
+        }
         // max screen size is 2000 x 2000 - scale should make whatever is rendered match
         // that - e.g. if actual screen is 1000x1000, scale is 1/2
         // 2000x1000 or 1000x2000, scale is 1
@@ -200,6 +248,11 @@ public class Player {
         AffineTransform tx = g.getTransform();
         g.translate(-cX * scale, -cY * scale);
         g.translate(x * scale + screenWidth / 2, y * scale + screenHeight / 2);
+        g.setColor(meee ? new Color(150, 200, 200) : new Color(200, 150, 150));
+        g.setFont(usernameFont);
+        FontMetrics metrics = g.getFontMetrics(usernameFont);
+        int xOffs = metrics.stringWidth(username) / 2;
+        g.drawString(username, -xOffs, -redRocket.getHeight() / 2 - 10);
         g.scale(scale, scale);
         g.rotate(r + Math.PI / 2);
         if (meee) {
@@ -208,6 +261,10 @@ public class Player {
             g.drawImage(redRocket, -redRocket.getWidth() / 2, -redRocket.getHeight() / 2, null);
         }
         g.setTransform(tx);
+
+        for (Laser l : lasers) {
+            l.draw(g, cX, cY, screenWidth, screenHeight);
+        }
 
         return true;
     }
@@ -225,6 +282,9 @@ public class Player {
     }
 
     public void sendMessages(HostManager m) {
+        if(dead && sentDead) {
+            return;
+        }
         if (Math.abs(x - lastSentX) > 5) {
             m.sendEvent(new ClientEvent("setx", x), false);
             lastSentX = x;
@@ -257,5 +317,54 @@ public class Player {
             m.sendEvent(new ClientEvent("setturning", "" + turning), false);
             lastSentTurning = turning;
         }
+        if (dead != sentDead) {
+            m.sendEvent(new ClientEvent("die", "" + dead), false);
+            sentDead = dead;
+        }
+
+        for (int i = 0; i < lasers.size(); i++) {
+            if (!sentLastLaser && i == lasers.size() - 1) {
+                m.sendEvent(new ClientEvent("laser", new LaserEvent(lasers.get(i), i) + ""), lastSentThrusting);
+                sentLastLaser = true;
+            } else {
+                lasers.get(i).sendMessages(m, i);
+                if (laserTime.get(i) < 0) {
+                    m.sendEvent(new ClientEvent("laser", new LaserEvent("destroy", i, "nullius") + ""), false);
+                    lasers.remove(i);
+                    laserTime.remove(i);
+                    i--;
+                } else {
+                    laserTime.set(i, laserTime.get(i) - 1);
+                }
+            }
+        }
+    }
+
+    public void addLaser() {
+        double laserX = x + (redRocket.getHeight() + Laser.laserImage.getHeight()) / 2 * Math.cos(r);
+        double laserY = y + (redRocket.getHeight() + Laser.laserImage.getHeight()) / 2 * Math.sin(r);
+        double laserR = r;
+        double laserXVel = xVel + 50 * Math.cos(r);
+        double laserYVel = yVel + 50 * Math.sin(r);
+        lasers.add(new Laser(laserX, laserY, laserR, laserXVel, laserYVel));
+        laserTime.add(laserExpiration);
+        sentLastLaser = false;
+    }
+
+    public void die() {
+        dead = true;
+    }
+
+    public boolean dead() {
+        return dead;
+    }
+
+    public boolean lasered(Player p) {
+        for(Laser l : lasers) {
+            if(l.collidesWith(p)) {
+                return true;
+            }
+        }
+        return false;
     }
 }
