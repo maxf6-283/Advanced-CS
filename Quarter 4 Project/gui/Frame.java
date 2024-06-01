@@ -16,6 +16,7 @@ public class Frame extends JFrame {
     private JoinMenu joinMenu;
     private WaitingRoom waitingRoom;
     private GamePanel gamePanel;
+    private EndGamePanel endGamePanel;
     private Panel activePanel;
 
     private HostManager hostManager;
@@ -44,6 +45,10 @@ public class Frame extends JFrame {
         add(gamePanel);
         layout.addLayoutComponent(gamePanel, "Game");
 
+        endGamePanel = new EndGamePanel(this);
+        add(endGamePanel);
+        layout.addLayoutComponent(endGamePanel, "Endgame");
+
         activePanel = mainMenu;
 
         setSize(1920, 1080);
@@ -68,6 +73,9 @@ public class Frame extends JFrame {
             }
             case "Game" -> {
                 activePanel = gamePanel;
+            }
+            case "Endgame" -> {
+                activePanel = endGamePanel;
             }
         }
         activePanel.setActive(true);
@@ -97,5 +105,9 @@ public class Frame extends JFrame {
 
     public Host host() {
         return joinMenu.selectedHost();
+    }
+
+    public GamePanel gamePanel() {
+        return gamePanel;
     }
 }

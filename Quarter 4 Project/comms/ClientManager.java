@@ -32,6 +32,21 @@ public class ClientManager {
     }
 
     public synchronized void recieveEvent(ClientEvent e, Client sender) {
+        if(e.type().equals("WINNER")) {
+            //its time to stop sending events
+            //after a small delay
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException er) {
+                er.printStackTrace();
+            }
+
+            for(Client c : clients) {
+                c.stop();
+            }
+
+            return;
+        }
         HostEvent event = new HostEvent(e.type(), clients.indexOf(sender), e.valueString());
         for(Client c : clients) {
             if(c != sender) {

@@ -1,3 +1,5 @@
+package utils;
+
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
@@ -122,21 +124,25 @@ public class HashMap<K, V> implements Map<K, V> {
         int hash = key.hashCode();
         int index = hash % buckets.length;
         index = index < 0 ? index + buckets.length : index;
-
+        
         if (buckets[index] == null) {
             buckets[index] = new Node(hash, key, value);
+            //no previous mapping
             return null;
         }
-
+        
         Node node = buckets[index];
         while (true) {
             if (key.equals(node.key)) {
                 V toReturn = node.value;
                 node.value = value;
+                //previous mapping
+                size--;
                 return toReturn;
             }
             if (node.next == null) {
                 node.next = new Node(hash, key, value);
+                //no previous mapping
                 return null;
             }
             node = node.next;
@@ -258,6 +264,7 @@ public class HashMap<K, V> implements Map<K, V> {
         private class KeySetIterator implements Iterator<K> {
             private int atIndex = 0;
             private Node atNode = null;
+            private K lastKey;
 
             public KeySetIterator() {
                 while (atIndex < buckets.length && buckets[atIndex] == null) {
@@ -278,7 +285,7 @@ public class HashMap<K, V> implements Map<K, V> {
 
             @Override
             public K next() {
-                K key = atNode.key;
+                lastKey = atNode.key;
 
                 if (atNode.next == null) {
                     atIndex++;
@@ -295,7 +302,12 @@ public class HashMap<K, V> implements Map<K, V> {
                     atNode = atNode.next;
                 }
 
-                return key;
+                return lastKey;
+            }
+
+            @Override
+            public void remove() {
+                HashMap.this.remove(lastKey);
             }
         }
 

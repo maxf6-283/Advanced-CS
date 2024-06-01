@@ -56,7 +56,7 @@ public class HostManager implements Runnable {
         try (Scanner sc = new Scanner(socket.getInputStream())) {
             while (running) {
                 HostEvent h = HostEvent.parse(sc.nextLine());
-                System.out.println("Received event " + h.toString().replace(HostBroadcaster.sep, "-"));
+                // System.out.println("Received event " + h.toString().replace(HostBroadcaster.sep, "-"));
                 if (h.playerNum() < 0) {
                     // server-driven events
                     if (h.type().equals("startgame")) {

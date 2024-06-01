@@ -13,6 +13,7 @@ import java.awt.FontMetrics;
 import comms.ClientEvent;
 import comms.HostEvent;
 import comms.HostManager;
+import game.PowerUp.PowerUpType;
 import gui.Button;
 import utils.ArrayList;
 
@@ -61,11 +62,25 @@ public class Player {
     private String username;
     private boolean dead = false;
     private boolean sentDead = false;
+    private double health = 1.0;
+    private double lastSentHealth = 1.0;
 
     private ArrayList<Laser> lasers = new ArrayList<>();
     private ArrayList<Integer> laserTime = new ArrayList<>();
-    private static final int laserExpiration = 200;
-    private boolean sentLastLaser = true;
+    private ArrayList<Laser> destroyedLasers = new ArrayList<>();
+    private static final int laserExpiration = 50;
+    private int sentLastLaser = 0;
+
+    private boolean sentAsteroid = false;
+    private ArrayList<ClientEvent> eventQueue = new ArrayList<>();
+    private Asteroid asteroid = new Asteroid();
+
+    private ArrayList<PowerUp> powerUps = new ArrayList<>();
+    private ArrayList<PowerUp> powerUpsToSend = new ArrayList<>();
+    private PowerUpType powerUpEffect = null;
+    private int powerUpDuration = 0;
+
+    public static Player meee;
 
     public Player(HostEvent createEvent) {
         if (createEvent.type().equals("create")) {
@@ -86,9 +101,9 @@ public class Player {
     }
 
     public synchronized void acceptHostEvent(HostEvent e) {
-        if(dead) {
-            System.out.println("Wait. That's illegal: " + e);
-        }
+        // if (dead) {
+        // System.out.println("Wait. That's illegal: " + e);
+        // }
         if (e.playerNum() != num) {
             throw new IllegalArgumentException(
                     "Host Event for player " + e.playerNum() + " cannot be applied to " + num);
@@ -131,13 +146,12 @@ public class Player {
                 dead = true;
             }
             case "laser" -> {
-                LaserEvent ev = e.valueLaser();
+                SubEvent ev = e.valueSub();
                 if (ev.type().equals("create")) {
                     if (lasers.size() != ev.laserNum()) {
                         throw new IllegalArgumentException(
                                 "Cannot add laser " + ev.laserNum() + " to laser array of size " + lasers.size());
                     }
-                    System.out.println("new laser added");
                     lasers.add(new Laser(ev));
                     laserTime.add(laserExpiration);
                 } else if (ev.type().equals("destroy")) {
@@ -147,10 +161,55 @@ public class Player {
                     lasers.get(ev.laserNum()).acceptLaserEvent(ev);
                 }
             }
+            case "asteroid" -> {
+                SubEvent ev = e.valueSub();
+                asteroid = new Asteroid(ev);
+            }
+            case "destroyedlaser" -> {
+                SubEvent ev = e.valueSub();
+                if (Integer.parseInt(ev.valueString()) == num) {
+                    laserTime.set(ev.laserNum(), -1);
+                }
+            }
+            case "powerup" -> {
+                SubEvent ev = e.valueSub();
+                if (ev.type().equals("create")) {
+                    powerUps.add(new PowerUp(ev));
+                } else if (ev.type().equals("destroy")) {
+                    if (ev.valueInt() == meee.num) {
+                        meee.powerUp(powerUps.get(ev.laserNum()));
+                    }
+                    powerUps.remove(ev.laserNum());
+                } else {
+                    System.err.println("WHY ARE POWERUPS LIKE THIS");
+                }
+            }
+            case "sethealth" -> {
+                health = e.valueDouble();
+            }
         }
     }
 
+    private void powerUp(PowerUp powerUp) {
+        powerUpEffect = powerUp.type();
+        powerUpDuration = 1000;
+    }
+
     public synchronized void move(float[][] gas) {
+        for (Laser laser : lasers) {
+            laser.move();
+        }
+
+        if (asteroid != null) {
+            asteroid.move();
+        }
+        if (powerUpDuration > 0) {
+            powerUpDuration--;
+        }
+        if (powerUpDuration == 0) {
+            powerUpEffect = null;
+            powerUpDuration--;
+        }
         if (dead) {
             return;
         }
@@ -205,10 +264,18 @@ public class Player {
             gasX = (gasX + 1 + gas.length) % gas.length;
             gasY = (gasY - 1 + gas[gasX].length) % gas[gasX].length;
             gas[gasX][gasY] += 0.5f;
-        }
-
-        for (Laser laser : lasers) {
-            laser.move();
+            gasX = (gasX + gas.length) % gas.length;
+            gasY = (gasY - 1 + gas[gasX].length) % gas[gasX].length;
+            gas[gasX][gasY] += 0.25f;
+            gasX = (gasX - 2 + gas.length) % gas.length;
+            gasY = (gasY + gas[gasX].length) % gas[gasX].length;
+            gas[gasX][gasY] += 0.25f;
+            gasX = (gasX + gas.length) % gas.length;
+            gasY = (gasY + 2 + gas[gasX].length) % gas[gasX].length;
+            gas[gasX][gasY] += 0.25f;
+            gasX = (gasX + 2 + gas.length) % gas.length;
+            gasY = (gasY + gas[gasX].length) % gas[gasX].length;
+            gas[gasX][gasY] += 0.25f;
         }
     }
 
@@ -221,7 +288,15 @@ public class Player {
     }
 
     public boolean draw(Graphics2D g, double cX, double cY, int screenWidth, int screenHeight, boolean meee) {
-        if(dead) {
+        if (asteroid != null) {
+            asteroid.draw(g, cX, cY, screenWidth, screenHeight);
+        }
+
+        for (PowerUp p : powerUps) {
+            p.draw(g, cX, cY, screenWidth, screenHeight);
+        }
+
+        if (dead) {
             return false;
         }
         // max screen size is 2000 x 2000 - scale should make whatever is rendered match
@@ -245,6 +320,7 @@ public class Player {
             cY -= fieldHeight;
         }
 
+        // username
         AffineTransform tx = g.getTransform();
         g.translate(-cX * scale, -cY * scale);
         g.translate(x * scale + screenWidth / 2, y * scale + screenHeight / 2);
@@ -252,7 +328,16 @@ public class Player {
         g.setFont(usernameFont);
         FontMetrics metrics = g.getFontMetrics(usernameFont);
         int xOffs = metrics.stringWidth(username) / 2;
-        g.drawString(username, -xOffs, -redRocket.getHeight() / 2 - 10);
+        g.drawString(username, -xOffs, -redRocket.getHeight() / 2 - 15);
+
+        // healthbar
+        if (health < 1.0) {
+            g.setColor(Color.GREEN);
+            g.fillRect(-50, -redRocket.getHeight() / 2 - 5, 100, 10);
+            g.setColor(Color.RED);
+            g.fillRect(-50 + (int) (100 * health), -redRocket.getHeight() / 2 - 5, 100 - (int) (100 * health), 10);
+        }
+
         g.scale(scale, scale);
         g.rotate(r + Math.PI / 2);
         if (meee) {
@@ -282,7 +367,38 @@ public class Player {
     }
 
     public void sendMessages(HostManager m) {
-        if(dead && sentDead) {
+        for (int i = 0; i < lasers.size(); i++) {
+            if (lasers.size() - i <= sentLastLaser) {
+                m.sendEvent(new ClientEvent("laser", new SubEvent(lasers.get(i), i) + ""), false);
+                sentLastLaser--;
+            } else {
+                lasers.get(i).sendMessages(m, i);
+                if (laserTime.get(i) < 0) {
+                    m.sendEvent(new ClientEvent("laser", new SubEvent("destroy", i, "nullius") + ""), false);
+                    lasers.remove(i);
+                    laserTime.remove(i);
+                    i--;
+                } else {
+                    laserTime.set(i, laserTime.get(i) - 1);
+                }
+            }
+        }
+
+        for (ClientEvent e : eventQueue) {
+            m.sendEvent(e, false);
+        }
+
+        if (sentAsteroid == false) {
+            m.sendEvent(new ClientEvent("asteroid", new SubEvent(asteroid) + ""), false);
+        }
+        asteroid.sendEvents(m);
+        synchronized (powerUpsToSend) {
+            for (PowerUp p : powerUpsToSend) {
+                m.sendEvent(new ClientEvent("powerup", new SubEvent(p) + ""), false);
+            }
+            powerUpsToSend.clear();
+        }
+        if (dead && sentDead) {
             return;
         }
         if (Math.abs(x - lastSentX) > 5) {
@@ -321,22 +437,9 @@ public class Player {
             m.sendEvent(new ClientEvent("die", "" + dead), false);
             sentDead = dead;
         }
-
-        for (int i = 0; i < lasers.size(); i++) {
-            if (!sentLastLaser && i == lasers.size() - 1) {
-                m.sendEvent(new ClientEvent("laser", new LaserEvent(lasers.get(i), i) + ""), lastSentThrusting);
-                sentLastLaser = true;
-            } else {
-                lasers.get(i).sendMessages(m, i);
-                if (laserTime.get(i) < 0) {
-                    m.sendEvent(new ClientEvent("laser", new LaserEvent("destroy", i, "nullius") + ""), false);
-                    lasers.remove(i);
-                    laserTime.remove(i);
-                    i--;
-                } else {
-                    laserTime.set(i, laserTime.get(i) - 1);
-                }
-            }
+        if (health != lastSentHealth) {
+            m.sendEvent(new ClientEvent("sethealth", health), false);
+            lastSentHealth = health;
         }
     }
 
@@ -348,7 +451,45 @@ public class Player {
         double laserYVel = yVel + 50 * Math.sin(r);
         lasers.add(new Laser(laserX, laserY, laserR, laserXVel, laserYVel));
         laserTime.add(laserExpiration);
-        sentLastLaser = false;
+        sentLastLaser++;
+        if (powerUpEffect == PowerUpType.BURST) {
+            // more lasers - separation at 15 deg (Math.PI/)
+            laserX = x + (redRocket.getHeight() + Laser.laserImage.getHeight()) / 2 * Math.cos(r + Math.PI / 12);
+            laserY = y + (redRocket.getHeight() + Laser.laserImage.getHeight()) / 2 * Math.sin(r + Math.PI / 12);
+            laserR = r + Math.PI / 12;
+            laserXVel = xVel + 50 * Math.cos(r + Math.PI / 12);
+            laserYVel = yVel + 50 * Math.sin(r + Math.PI / 12);
+            lasers.add(new Laser(laserX, laserY, laserR, laserXVel, laserYVel));
+            laserTime.add(laserExpiration);
+            sentLastLaser++;
+
+            laserX = x + (redRocket.getHeight() + Laser.laserImage.getHeight()) / 2 * Math.cos(r - Math.PI / 12);
+            laserY = y + (redRocket.getHeight() + Laser.laserImage.getHeight()) / 2 * Math.sin(r - Math.PI / 12);
+            laserR = r - Math.PI / 12;
+            laserXVel = xVel + 50 * Math.cos(r - Math.PI / 12);
+            laserYVel = yVel + 50 * Math.sin(r - Math.PI / 12);
+            lasers.add(new Laser(laserX, laserY, laserR, laserXVel, laserYVel));
+            laserTime.add(laserExpiration);
+            sentLastLaser++;
+        }
+    }
+
+    public void resetAsteroid() {
+        PowerUp p = asteroid.generatePowerUp();
+        if (p != null) {
+            powerUps.add(p);
+            powerUpsToSend.add(p);
+        }
+        asteroid = new Asteroid();
+        sentAsteroid = false;
+    }
+
+    public void takeDamage(double damage) {
+        health -= damage;
+        if (health < 0.0) {
+            health = 0.0;
+            dead = true;
+        }
     }
 
     public void die() {
@@ -360,11 +501,62 @@ public class Player {
     }
 
     public boolean lasered(Player p) {
-        for(Laser l : lasers) {
-            if(l.collidesWith(p)) {
-                return true;
+        boolean lasered = false;
+        for (int i = 0; i < lasers.size(); i++) {
+            if ((!destroyedLasers.contains(lasers.get(i))) && lasers.get(i).collidesWith(p)) {
+                lasered = true;
+                if (p == this) {
+                    laserTime.set(i, -1);
+                } else {
+                    p.eventQueue
+                            .add(new ClientEvent("destroyedlaser", new SubEvent("laser", i, "" + num) + ""));
+                }
+                destroyedLasers.add(lasers.get(i));
             }
         }
-        return false;
+        return lasered;
+    }
+
+    public boolean asteroidLasered(Player p) {
+        boolean lasered = false;
+        for (int i = 0; i < lasers.size(); i++) {
+            if ((!destroyedLasers.contains(lasers.get(i))) && lasers.get(i).collidesWith(p.asteroid)) {
+                lasered = true;
+                if (p == this) {
+                    laserTime.set(i, -1);
+                } else {
+                    p.eventQueue
+                            .add(new ClientEvent("destroyedlaser", new SubEvent("laser", i, "" + num) + ""));
+                }
+                destroyedLasers.add(lasers.get(i));
+                i--;
+            }
+        }
+        return lasered;
+    }
+
+    public void takeAsteroidScaledDamage(double damage) {
+        asteroid.takeScaledDamage(damage);
+        if (asteroid.health() < 0) {
+            resetAsteroid();
+        }
+    }
+
+    public void checkPowerUpCollision(Player p) {
+        for (int i = 0; i < powerUps.size(); i++) {
+            PowerUp pow = powerUps.get(i);
+            if (pow.collidesWith(p)) {
+                eventQueue.add(new ClientEvent("powerup", "" + new SubEvent("destroy", i, "" + p.num)));
+                powerUps.remove(i);
+                if (p == this) {
+                    powerUp(pow);
+                }
+                i--;
+            }
+        }
+    }
+
+    public PowerUpType powerUp() {
+        return powerUpEffect;
     }
 }

@@ -11,7 +11,9 @@ import java.awt.geom.AffineTransform;
 import gui.Frame;
 import gui.Panel;
 import utils.ArrayList;
+import comms.ClientEvent;
 import comms.HostEvent;
+import game.PowerUp.PowerUpType;
 
 public class GamePanel extends Panel implements Runnable, KeyListener {
     public static final int gasConstant = 10;
@@ -27,6 +29,7 @@ public class GamePanel extends Panel implements Runnable, KeyListener {
     private float[][] gas;
     private int cooldownTime = 0;
     private boolean firing = false;
+    private Player winner = null;
 
     public GamePanel(Frame f) {
         parentFrame = f;
@@ -46,20 +49,17 @@ public class GamePanel extends Panel implements Runnable, KeyListener {
         for (int i = 0; i < newGas.length; i++) {
             for (int j = 0; j < newGas[i].length; j++) {
                 if (gas[i][j] < 1.0f) {
-                    newGas[i][j] = gas[i][j] * 0.87f
-                            + gas[(i - 1 + gas.length) % gas.length][j] * 0.03f
-                            + gas[(i + 1) % gas.length][j] * 0.03f
-                            + gas[i][(j - 1 + gas[i].length) % gas[i].length] * 0.03f
-                            + gas[i][(j + 1) % gas[i].length] * 0.03f;
+                    newGas[i][j] = gas[i][j] * 0.8f
+                            + gas[(i - 1 + gas.length) % gas.length][j] * 0.048f
+                            + gas[(i + 1) % gas.length][j] * 0.048f
+                            + gas[i][(j - 1 + gas[i].length) % gas[i].length] * 0.048f
+                            + gas[i][(j + 1) % gas[i].length] * 0.048f;
                 } else {
-                    newGas[i][j] = gas[i][j] * 0.75f
-                            + gas[(i - 1 + gas.length) % gas.length][j] * 0.05f
-                            + gas[(i + 1) % gas.length][j] * 0.05f
-                            + gas[i][(j - 1 + gas[i].length) % gas[i].length] * 0.05f
-                            + gas[i][(j + 1) % gas[i].length] * 0.05f;
+                    newGas[i][j] = Math.max(0.99f, gas[i][j] * 0.75f);
                 }
             }
         }
+        // newGas[0][0] = 10.0f;
 
         gas = newGas;
     }
@@ -73,12 +73,15 @@ public class GamePanel extends Panel implements Runnable, KeyListener {
         active = a;
         if (a == true) {
             meee = new Player(new HostEvent("create", players().indexOf(Optional.empty()), "you"));
+            Player.meee = meee;
             (new Thread(this)).start();
         }
     }
 
     @Override
     public void paintComponent(Graphics g) {
+        if(camFollowee == null)
+            camFollowee = meee;
         Graphics2D g2d = (Graphics2D) g;
 
         int s = getWidth() > getHeight() ? getWidth() : getHeight();
@@ -106,7 +109,7 @@ public class GamePanel extends Panel implements Runnable, KeyListener {
                 int iA = (i + gas.length) % gas.length;
                 int jA = (j + gas[iA].length) % gas[iA].length;
                 if (gas[iA][jA] > 0.05) {
-                    float val = gas[iA][jA] > 1.0f ? 1.0f : gas[iA][jA];
+                    float val = gas[iA][jA] > 0.95f ? 0.95f : gas[iA][jA];
                     g2d.setColor(new Color(1.0f - val, 1.0f, 1.0f, val));
                     g2d.fillRect(i * gasConstant - cX + w / 2,
                             j * gasConstant - cY + h / 2, gasConstant, gasConstant);
@@ -129,7 +132,7 @@ public class GamePanel extends Panel implements Runnable, KeyListener {
         camFollowee = meee;
         // updateGas's very own thread
         (new Thread(() -> {
-            while (true) {
+            while (active) {
                 try {
                     Thread.sleep(50);
                 } catch (InterruptedException e) {
@@ -191,7 +194,7 @@ public class GamePanel extends Panel implements Runnable, KeyListener {
                 cooldownTime--;
             }
             if(firing && cooldownTime == 0 && !meee.dead()) {
-                cooldownTime = 30;
+                cooldownTime = meee.powerUp() == PowerUpType.RAPIDFIRE ? 5 : 30;
                 meee.addLaser();
             }
 
@@ -200,13 +203,64 @@ public class GamePanel extends Panel implements Runnable, KeyListener {
             for(Optional<Player> p : players()) {
                 if(p.isPresent()) {
                     if(p.get().lasered(meee)) {
-                        meee.die();
-                        camFollowee = p.get();
-                        break playerCollision;
+                        meee.takeDamage(0.1);
+                        if(meee.dead()) {
+                            camFollowee = p.get();
+                            break playerCollision;
+                        }
                     }
                 }
             }
+            
+            //asteroid collision
+            for(Optional<Player> p : players()) {
+                if(p.isPresent()) {
+                    if(p.get().asteroidLasered(meee)) {
+                        meee.takeAsteroidScaledDamage(0.1);
+                    }
+                } else {
+                    if(meee.asteroidLasered(meee)) {
+                        meee.takeAsteroidScaledDamage(0.1);
+                    }
+                }
+            }
+
+            //powerup collision
+            for(Optional<Player> p : players()) {
+                if(p.isPresent()) {
+                    meee.checkPowerUpCollision(p.get());
+                } else {
+                    meee.checkPowerUpCollision(meee);
+                }
+            }
+
+            //detect winner
+            int living = 0;
+            for(Optional<Player> p : players()) {
+                if(p.isPresent() && !p.get().dead()) {
+                    living++;
+                } else if (p.isEmpty() && !meee.dead()) {
+                    living++;
+                }
+            }
+            if (living <= 1) {
+                //WE HAVE A WINNER
+                for(Optional<Player> p : players()) {
+                    if(p.isPresent() && !p.get().dead()) {
+                        winner = p.get();
+                    } else if(p.isEmpty() && !meee.dead()) {
+                        winner = meee;
+                        parentFrame.hostManager().sendEvent(new ClientEvent("WINNER", "nullius"), true);
+                    }
+                }
+                parentFrame.setHostManager(null);
+                parentFrame.showPanel("Endgame");
+            }
         }
+    }
+
+    public Player winner() {
+        return winner;
     }
 
     @Override

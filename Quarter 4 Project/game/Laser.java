@@ -31,8 +31,8 @@ public class Laser {
         laserImage = l;
     }
 
-    public Laser(LaserEvent l) {
-        String[] vals = l.valueString().split(LaserEvent.subSep);
+    public Laser(SubEvent l) {
+        String[] vals = l.valueString().split(SubEvent.subSep);
         x = Double.parseDouble(vals[0]);
         y = Double.parseDouble(vals[1]);
         r = Double.parseDouble(vals[2]);
@@ -115,10 +115,10 @@ public class Laser {
         g.setTransform(tx);
     }
 
-    public void acceptLaserEvent(LaserEvent ev) {
+    public void acceptLaserEvent(SubEvent ev) {
         switch (ev.type()) {
             case "setpos" -> {
-                String[] xy = ev.valueString().split(LaserEvent.subSep);
+                String[] xy = ev.valueString().split(SubEvent.subSep);
                 x = Double.parseDouble(xy[0]);
                 y = Double.parseDouble(xy[1]);
             }
@@ -134,12 +134,14 @@ public class Laser {
         if (xDiff * xDiff + yDiff * yDiff > 50) {
             lastSentX = x;
             lastSentY = y;
-            m.sendEvent(new ClientEvent("laser", new LaserEvent("setpos", n, x + LaserEvent.subSep + y) + ""), false);
+            m.sendEvent(new ClientEvent("laser", new SubEvent("setpos", n, x + SubEvent.subSep + y) + ""), false);
         }
     }
 
     public boolean collidesWith(Player p) {
         //I regret this collision code
+        double x = p.x() - this.x > Player.fieldWidth / 2 ? this.x + Player.fieldWidth : this.x - p.x() > Player.fieldWidth / 2 ? this.x - Player.fieldWidth : this.x;
+        double y = p.y() - this.y > Player.fieldWidth / 2 ? this.y + Player.fieldHeight : this.y - p.y() > Player.fieldHeight / 2 ? this.y - Player.fieldHeight : this.y;
         double totalDist = Player.blueRocket.getHeight() / 2 + laserImage.getWidth();
         double l1x = x - laserImage.getHeight() / 2 * Math.sin(r);
         double l1y = y + laserImage.getHeight() / 2 * Math.cos(r);
@@ -147,10 +149,27 @@ public class Laser {
         double l2y = y - laserImage.getHeight() / 2 * Math.cos(r);
         double dist2 = (l1x - l2x) * (l1x - l2x) + (l1y - l2y) * (l1y - l2y);
         double t = ((p.x() - l1x) * (l2x - l1x) + (p.y() - l1y) * (l2y - l1y)) / dist2;
-        t = Math.max(0, Math.min(1, t));
+        t = Math.clamp(t, 0, 1);
         double fPx = l1x + t * (l2x - l1x);
         double fPy = l1y + t * (l2y - l1y);
         double finalDist2 = (fPx - p.x()) * (fPx - p.x()) + (fPy - p.y()) * (fPy - p.y());
+        return finalDist2 < totalDist * totalDist;
+    }
+
+    public boolean collidesWith(Asteroid a) { //I regret this collision code
+        double x = a.x() - this.x > Player.fieldWidth / 2 ? this.x + Player.fieldWidth : this.x - a.x() > Player.fieldWidth / 2 ? this.x - Player.fieldWidth : this.x;
+        double y = a.y() - this.y > Player.fieldWidth / 2 ? this.y + Player.fieldHeight : this.y - a.y() > Player.fieldHeight / 2 ? this.y - Player.fieldHeight : this.y;
+        double totalDist = Asteroid.asteroidImage.getHeight() / 2 + laserImage.getWidth();
+        double l1x = x - laserImage.getHeight() / 2 * Math.sin(r);
+        double l1y = y + laserImage.getHeight() / 2 * Math.cos(r);
+        double l2x = x + laserImage.getHeight() / 2 * Math.sin(r);
+        double l2y = y - laserImage.getHeight() / 2 * Math.cos(r);
+        double dist2 = (l1x - l2x) * (l1x - l2x) + (l1y - l2y) * (l1y - l2y);
+        double t = ((a.x() - l1x) * (l2x - l1x) + (a.y() - l1y) * (l2y - l1y)) / dist2;
+        t = Math.clamp(t, 0, 1);
+        double fPx = l1x + t * (l2x - l1x);
+        double fPy = l1y + t * (l2y - l1y);
+        double finalDist2 = (fPx - a.x()) * (fPx - a.x()) + (fPy - a.y()) * (fPy - a.y());
         return finalDist2 < totalDist * totalDist;
     }
 }

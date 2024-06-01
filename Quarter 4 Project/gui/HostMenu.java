@@ -27,7 +27,6 @@ public class HostMenu extends Panel {
 
     public HostMenu(Frame f) {
         setLayout(null);
-        //TODO: Add ability to kick clients
         parentFrame = f;
 
         username = new TextField("unnamed");

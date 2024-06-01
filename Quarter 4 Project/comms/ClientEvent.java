@@ -1,6 +1,6 @@
 package comms;
 
-import game.LaserEvent;
+import game.SubEvent;
 
 public class ClientEvent {
     private static final String sep = new String(new char[] { (char) 0 });
@@ -25,8 +25,8 @@ public class ClientEvent {
         return Double.parseDouble(value);
     }
 
-    public LaserEvent valueLaser() {
-        return LaserEvent.parse(value);
+    public SubEvent valueLaser() {
+        return SubEvent.parse(value);
     }
     
     public String type() {
