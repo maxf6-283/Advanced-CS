@@ -1,12 +1,24 @@
 package game;
 
 import java.util.Optional;
+
+import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.DataLine;
+import javax.sound.sampled.UnsupportedAudioFileException;
+import javax.sound.sampled.Clip;
+import javax.sound.sampled.SourceDataLine;
+import javax.sound.sampled.LineUnavailableException;
+
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.Color;
 import java.awt.geom.AffineTransform;
+import java.io.IOException;
+import java.io.InputStream;
 
 import gui.Frame;
 import gui.Panel;
@@ -16,7 +28,39 @@ import comms.HostEvent;
 import game.PowerUp.PowerUpType;
 
 public class GamePanel extends Panel implements Runnable, KeyListener {
+    // sounds
+    private static final int soundBufferSize = 4096;
+
+    private static Clip laserClip;
+    private static Clip blowUpClip;
+
+    static {
+        InputStream laserInputStream = GamePanel.class.getClassLoader().getResourceAsStream("resources/laser.wav");
+        InputStream blowUpInputStream = GamePanel.class.getClassLoader().getResourceAsStream("resources/blowUp.wav");
+        try {
+            AudioInputStream laserAudioInputStream = AudioSystem.getAudioInputStream(laserInputStream);
+            AudioInputStream blowUpAudioInputStream = AudioSystem.getAudioInputStream(blowUpInputStream);
+            laserClip = AudioSystem.getClip();
+            laserClip.open(laserAudioInputStream);
+            laserClip.start();
+            blowUpClip = AudioSystem.getClip();
+            blowUpClip.open(blowUpAudioInputStream);
+            blowUpClip.start();
+        } catch (IOException | UnsupportedAudioFileException | LineUnavailableException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void shootLaserSound() {
+        laserClip.loop(1);
+    }
+
+    public static void blowUpSound() {
+        blowUpClip.loop(1);
+    }
+
     public static final int gasConstant = 10;
+
     private Frame parentFrame;
     private boolean active;
     private Player meee;
@@ -80,7 +124,7 @@ public class GamePanel extends Panel implements Runnable, KeyListener {
 
     @Override
     public void paintComponent(Graphics g) {
-        if(camFollowee == null)
+        if (camFollowee == null)
             camFollowee = meee;
         Graphics2D g2d = (Graphics2D) g;
 
@@ -93,11 +137,13 @@ public class GamePanel extends Panel implements Runnable, KeyListener {
         g2d.scale(scale, scale);
         g2d.setColor(Color.WHITE);
         for (int i = 0; i < starPositionXs.length; i++) {
-            g2d.fillRect((starPositionXs[i] + (int) camX - (int) camFollowee.x() + Player.fieldWidth) % Player.fieldWidth,
-                    (starPositionYs[i] + (int) camY - (int) camFollowee.y() + Player.fieldHeight) % Player.fieldHeight, 4, 4);
+            g2d.fillRect(
+                    (starPositionXs[i] + (int) camX - (int) camFollowee.x() + Player.fieldWidth) % Player.fieldWidth,
+                    (starPositionYs[i] + (int) camY - (int) camFollowee.y() + Player.fieldHeight) % Player.fieldHeight,
+                    4, 4);
         }
 
-        //behold: the gas code of beauty
+        // behold: the gas code of beauty
         int cX = (int) camX;
         int cY = (int) camY;
         int w = (int) (getWidth() / scale);
@@ -190,65 +236,64 @@ public class GamePanel extends Panel implements Runnable, KeyListener {
             camX = camX * 0.85 + camFollowee.x() * 0.15;
             camY = camY * 0.85 + camFollowee.y() * 0.15;
 
-            if(cooldownTime > 0) {
+            if (cooldownTime > 0) {
                 cooldownTime--;
             }
-            if(firing && cooldownTime == 0 && !meee.dead()) {
+            if (firing && cooldownTime == 0 && !meee.dead()) {
                 cooldownTime = meee.powerUp() == PowerUpType.RAPIDFIRE ? 5 : 30;
                 meee.addLaser();
             }
 
-            //collision detection
-            playerCollision:
-            for(Optional<Player> p : players()) {
-                if(p.isPresent()) {
-                    if(p.get().lasered(meee)) {
+            // collision detection
+            playerCollision: for (Optional<Player> p : players()) {
+                if (p.isPresent()) {
+                    if (p.get().lasered(meee)) {
                         meee.takeDamage(0.1);
-                        if(meee.dead()) {
+                        if (meee.dead()) {
                             camFollowee = p.get();
                             break playerCollision;
                         }
                     }
                 }
             }
-            
-            //asteroid collision
-            for(Optional<Player> p : players()) {
-                if(p.isPresent()) {
-                    if(p.get().asteroidLasered(meee)) {
+
+            // asteroid collision
+            for (Optional<Player> p : players()) {
+                if (p.isPresent()) {
+                    if (p.get().asteroidLasered(meee)) {
                         meee.takeAsteroidScaledDamage(0.1);
                     }
                 } else {
-                    if(meee.asteroidLasered(meee)) {
+                    if (meee.asteroidLasered(meee)) {
                         meee.takeAsteroidScaledDamage(0.1);
                     }
                 }
             }
 
-            //powerup collision
-            for(Optional<Player> p : players()) {
-                if(p.isPresent()) {
+            // powerup collision
+            for (Optional<Player> p : players()) {
+                if (p.isPresent()) {
                     meee.checkPowerUpCollision(p.get());
                 } else {
                     meee.checkPowerUpCollision(meee);
                 }
             }
 
-            //detect winner
+            // detect winner
             int living = 0;
-            for(Optional<Player> p : players()) {
-                if(p.isPresent() && !p.get().dead()) {
+            for (Optional<Player> p : players()) {
+                if (p.isPresent() && !p.get().dead()) {
                     living++;
                 } else if (p.isEmpty() && !meee.dead()) {
                     living++;
                 }
             }
             if (living <= 1) {
-                //WE HAVE A WINNER
-                for(Optional<Player> p : players()) {
-                    if(p.isPresent() && !p.get().dead()) {
+                // WE HAVE A WINNER
+                for (Optional<Player> p : players()) {
+                    if (p.isPresent() && !p.get().dead()) {
                         winner = p.get();
-                    } else if(p.isEmpty() && !meee.dead()) {
+                    } else if (p.isEmpty() && !meee.dead()) {
                         winner = meee;
                         parentFrame.hostManager().sendEvent(new ClientEvent("WINNER", "nullius"), true);
                     }

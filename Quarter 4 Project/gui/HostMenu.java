@@ -67,7 +67,7 @@ public class HostMenu extends Panel {
         clientList = new List<>(new ArrayList<>(), e -> {
             return e.isEmpty() ? username.getText() + " (you)" : e.get().username();
         });
-        hoster = new HostBroadcaster("Unnamed");
+
         s = new ScrollPane(clientList);
         add(s);
 
@@ -101,7 +101,7 @@ public class HostMenu extends Panel {
     }
 
     private void startHosting() {
-        hoster.restart();
+        hoster = new HostBroadcaster(username.getText());
         if(parentFrame.hostManager() != null) {
             parentFrame.hostManager().stop();
         }

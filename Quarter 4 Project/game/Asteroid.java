@@ -43,7 +43,7 @@ public class Asteroid {
     public Asteroid() {
         x = Math.random() * Player.fieldWidth;
         y = Math.random() * Player.fieldHeight;
-        r = Math.random() * Math.TAU;
+        r = Math.random() * Math.PI * 2;
         xVel = (Math.random() - 0.5) * 25.0;
         yVel = (Math.random() - 0.5) * 25.0;
         rVel = (Math.random() - 0.5);
@@ -69,7 +69,7 @@ public class Asteroid {
         y += yVel;
         y = (x % Player.fieldWidth + Player.fieldWidth) % Player.fieldWidth;
         r += rVel;
-        r = (r % Math.TAU);
+        r = (r % (Math.PI * 2));
 
         size += 0.0005;
         xVel *= (size - 0.0001) / size;

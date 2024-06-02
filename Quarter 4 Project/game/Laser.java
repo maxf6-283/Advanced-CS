@@ -149,7 +149,7 @@ public class Laser {
         double l2y = y - laserImage.getHeight() / 2 * Math.cos(r);
         double dist2 = (l1x - l2x) * (l1x - l2x) + (l1y - l2y) * (l1y - l2y);
         double t = ((p.x() - l1x) * (l2x - l1x) + (p.y() - l1y) * (l2y - l1y)) / dist2;
-        t = Math.clamp(t, 0, 1);
+        t = Math.min(Math.max(t, 0), 1);
         double fPx = l1x + t * (l2x - l1x);
         double fPy = l1y + t * (l2y - l1y);
         double finalDist2 = (fPx - p.x()) * (fPx - p.x()) + (fPy - p.y()) * (fPy - p.y());
@@ -166,7 +166,7 @@ public class Laser {
         double l2y = y - laserImage.getHeight() / 2 * Math.cos(r);
         double dist2 = (l1x - l2x) * (l1x - l2x) + (l1y - l2y) * (l1y - l2y);
         double t = ((a.x() - l1x) * (l2x - l1x) + (a.y() - l1y) * (l2y - l1y)) / dist2;
-        t = Math.clamp(t, 0, 1);
+        t = Math.min(Math.max(t, 0), 1);
         double fPx = l1x + t * (l2x - l1x);
         double fPy = l1y + t * (l2y - l1y);
         double finalDist2 = (fPx - a.x()) * (fPx - a.x()) + (fPy - a.y()) * (fPy - a.y());

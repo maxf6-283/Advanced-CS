@@ -110,4 +110,12 @@ public class Frame extends JFrame {
     public GamePanel gamePanel() {
         return gamePanel;
     }
+
+    public void reset() {
+        // hostManager.stop();
+        // hostManager = null;
+        // remove(gamePanel);
+        // gamePanel = new GamePanel(this);
+        // add(gamePanel, "Game");
+    }
 }

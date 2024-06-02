@@ -21,7 +21,10 @@ public class EndGamePanel extends Panel {
 
         backToMainMenu = new Button("Back to Main Menu");
         add(backToMainMenu);
-        backToMainMenu.addActionListener(e -> parentFrame.showPanel("Main Menu"));
+        backToMainMenu.addActionListener(e -> {
+            parentFrame.reset();
+            parentFrame.showPanel("Main Menu");
+        });
 
         addComponentListener(new ComponentAdapter() {
             @Override

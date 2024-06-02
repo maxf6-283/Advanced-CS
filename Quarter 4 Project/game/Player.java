@@ -452,6 +452,7 @@ public class Player {
         lasers.add(new Laser(laserX, laserY, laserR, laserXVel, laserYVel));
         laserTime.add(laserExpiration);
         sentLastLaser++;
+        GamePanel.shootLaserSound();
         if (powerUpEffect == PowerUpType.BURST) {
             // more lasers - separation at 15 deg (Math.PI/)
             laserX = x + (redRocket.getHeight() + Laser.laserImage.getHeight()) / 2 * Math.cos(r + Math.PI / 12);
@@ -488,12 +489,13 @@ public class Player {
         health -= damage;
         if (health < 0.0) {
             health = 0.0;
-            dead = true;
+            die();
         }
     }
 
     public void die() {
         dead = true;
+        GamePanel.blowUpSound();
     }
 
     public boolean dead() {
@@ -538,6 +540,7 @@ public class Player {
     public void takeAsteroidScaledDamage(double damage) {
         asteroid.takeScaledDamage(damage);
         if (asteroid.health() < 0) {
+            GamePanel.blowUpSound();
             resetAsteroid();
         }
     }
