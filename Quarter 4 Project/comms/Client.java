@@ -2,6 +2,7 @@ package comms;
 
 import java.net.Socket;
 import java.util.Scanner;
+
 import java.io.PrintWriter;
 import java.io.IOException;
 
@@ -27,13 +28,17 @@ public class Client implements Runnable {
         try {
             Scanner s = new Scanner(socket.getInputStream(), HostBroadcaster.charset);
             while (running) {
-                ClientEvent e = ClientEvent.parse(s.nextLine());
-                if(e.type().equals("quit")) {
-                    running = false;
-                } else if(e.type().equals("setname")) {
-                    name = e.valueString();
+                try {
+                    ClientEvent e = ClientEvent.parse(s.nextLine());
+                    if(e.type().equals("quit")) {
+                        running = false;
+                    } else if(e.type().equals("setname")) {
+                        name = e.valueString();
+                    }
+                    clientManager.recieveEvent(e, this);
+                } catch(java.util.NoSuchElementException e) {
+                    
                 }
-                clientManager.recieveEvent(e, this);
             }
             s.close();
         } catch (IOException e) {

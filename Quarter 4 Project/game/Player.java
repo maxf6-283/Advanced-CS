@@ -177,7 +177,11 @@ public class Player {
                     powerUps.add(new PowerUp(ev));
                 } else if (ev.type().equals("destroy")) {
                     if (ev.valueInt() == meee.num) {
+                        try {
                         meee.powerUp(powerUps.get(ev.laserNum()));
+                        } catch (java.lang.ArrayIndexOutOfBoundsException er) {
+                            er.printStackTrace();
+                        }
                     }
                     powerUps.remove(ev.laserNum());
                 } else {
@@ -351,6 +355,12 @@ public class Player {
             l.draw(g, cX, cY, screenWidth, screenHeight);
         }
 
+        if (thrusting && meee) {
+            GamePanel.startThrustSound();
+        } else if (meee) {
+            GamePanel.stopThrustSound();
+        }
+
         return true;
     }
 
@@ -441,6 +451,8 @@ public class Player {
             m.sendEvent(new ClientEvent("sethealth", health), false);
             lastSentHealth = health;
         }
+
+        m.flush();
     }
 
     public void addLaser() {

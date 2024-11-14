@@ -18,6 +18,7 @@ public class HostManager implements Runnable {
     private volatile boolean running = true;
     private List<Optional<Player>> ps;
     private Runnable r;
+    private Player winner;
 
     public HostManager(Host h, List<Optional<Player>> pList, Runnable onStartGame) {
         this(h.getAddress(), pList, onStartGame);
@@ -87,6 +88,10 @@ public class HostManager implements Runnable {
                     ps.update();
                 } else {
                     players.get(h.playerNum()).get().acceptHostEvent(h);
+                    if(h.type().equals("WINNER")) {
+                        System.out.println("Recieved winner");
+                        winner = players.get(h.playerNum()).get();
+                    }
                     if (h.type().equals("setname")) {
                         ps.update();
                     }
@@ -104,5 +109,9 @@ public class HostManager implements Runnable {
 
     public ArrayList<Optional<Player>> players() {
         return players;
+    }
+
+    public Player winner() {
+        return winner;
     }
 }

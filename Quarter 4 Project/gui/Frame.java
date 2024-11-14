@@ -17,6 +17,7 @@ public class Frame extends JFrame {
     private WaitingRoom waitingRoom;
     private GamePanel gamePanel;
     private EndGamePanel endGamePanel;
+    private Instr instructions;
     private Panel activePanel;
 
     private HostManager hostManager;
@@ -28,6 +29,10 @@ public class Frame extends JFrame {
         mainMenu = new MainMenu(this);
         add(mainMenu);
         layout.addLayoutComponent(mainMenu, "Main Menu");
+
+        instructions = new Instr(this);
+        add(instructions);
+        layout.addLayoutComponent(instructions, "Instructions");
 
         hostMenu = new HostMenu(this);
         add(hostMenu);
@@ -76,6 +81,9 @@ public class Frame extends JFrame {
             }
             case "Endgame" -> {
                 activePanel = endGamePanel;
+            }
+            case "Instructions" -> {
+                activePanel = instructions;
             }
         }
         activePanel.setActive(true);

@@ -2,13 +2,10 @@ package game;
 
 import java.util.Optional;
 
-import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.DataLine;
 import javax.sound.sampled.UnsupportedAudioFileException;
 import javax.sound.sampled.Clip;
-import javax.sound.sampled.SourceDataLine;
 import javax.sound.sampled.LineUnavailableException;
 
 import java.awt.Graphics;
@@ -28,35 +25,62 @@ import comms.HostEvent;
 import game.PowerUp.PowerUpType;
 
 public class GamePanel extends Panel implements Runnable, KeyListener {
-    // sounds
-    private static final int soundBufferSize = 4096;
 
     private static Clip laserClip;
     private static Clip blowUpClip;
+    private static Clip thrustClip;
 
     static {
         InputStream laserInputStream = GamePanel.class.getClassLoader().getResourceAsStream("resources/laser.wav");
         InputStream blowUpInputStream = GamePanel.class.getClassLoader().getResourceAsStream("resources/blowUp.wav");
+        InputStream thrustInputStream = GamePanel.class.getClassLoader().getResourceAsStream("resources/thrust.wav");
         try {
             AudioInputStream laserAudioInputStream = AudioSystem.getAudioInputStream(laserInputStream);
             AudioInputStream blowUpAudioInputStream = AudioSystem.getAudioInputStream(blowUpInputStream);
+            AudioInputStream thrustAudioInputStream = AudioSystem.getAudioInputStream(thrustInputStream);
             laserClip = AudioSystem.getClip();
             laserClip.open(laserAudioInputStream);
-            laserClip.start();
             blowUpClip = AudioSystem.getClip();
             blowUpClip.open(blowUpAudioInputStream);
-            blowUpClip.start();
+            thrustClip = AudioSystem.getClip();
+            thrustClip.open(thrustAudioInputStream);
         } catch (IOException | UnsupportedAudioFileException | LineUnavailableException e) {
             e.printStackTrace();
         }
     }
 
+    private static boolean laserStarted = false;
+
     public static void shootLaserSound() {
-        laserClip.loop(1);
+        laserClip.loop(0);
+        laserClip.setFramePosition(0);
+        if(!laserStarted) {
+            laserClip.start();
+            laserStarted = true;
+        }
     }
 
     public static void blowUpSound() {
-        blowUpClip.loop(1);
+        blowUpClip.stop();
+        blowUpClip.setFramePosition(0);
+        blowUpClip.start();
+    }
+
+    private static boolean startedThrustSound = false;
+
+    public static void startThrustSound() {
+        if(!startedThrustSound) {
+            startedThrustSound = true;
+            thrustClip.start();
+            thrustClip.loop(Clip.LOOP_CONTINUOUSLY);
+        }
+    }
+
+    public static void stopThrustSound() {
+        if(startedThrustSound) {
+            startedThrustSound = false;
+            thrustClip.stop();
+        }
     }
 
     public static final int gasConstant = 10;
@@ -292,12 +316,19 @@ public class GamePanel extends Panel implements Runnable, KeyListener {
                 // WE HAVE A WINNER
                 for (Optional<Player> p : players()) {
                     if (p.isPresent() && !p.get().dead()) {
+                        meee.die();
+                        meee.sendMessages(parentFrame.hostManager());
                         winner = p.get();
                     } else if (p.isEmpty() && !meee.dead()) {
                         winner = meee;
                         parentFrame.hostManager().sendEvent(new ClientEvent("WINNER", "nullius"), true);
+                        System.out.println("ASD");
                     }
                 }
+                parentFrame.setHostManager(null);
+                parentFrame.showPanel("Endgame");
+            } else if(parentFrame.hostManager().winner() != null) {
+                winner = parentFrame.hostManager().winner();
                 parentFrame.setHostManager(null);
                 parentFrame.showPanel("Endgame");
             }
